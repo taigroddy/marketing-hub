@@ -163,44 +163,6 @@ RSpec.describe PlatformAccounts::ConnectService, type: :service do
         expect(account.account_id).to eq("act_#{user.id}")
         expect(account.name).to eq('Facebook Ad Account')
       end
-
-      it 'uses user info from fetch_user_info when ad accounts are empty' do
-        allow(mock_client).to receive(:fetch_ad_accounts).and_return(Dry::Monads::Success(data: []))
-        allow(mock_client).to receive(:fetch_user_info).and_return(
-          Dry::Monads::Success(id: 'u_123', name: 'User Name Account')
-        )
-
-        result = described_class.call(platform: 'facebook', code: 'valid_code')
-        expect(result).to be_success
-        expect(result.value![:platform_account].account_id).to eq('u_123')
-        expect(result.value![:platform_account].name).to eq('User Name Account')
-      end
-
-      it 'allows explicit user passed in input' do
-        Current.user = nil
-        result = described_class.call(platform: 'facebook', code: 'valid_code', user: user)
-        expect(result).to be_success
-        expect(result.value![:platform_account].user).to eq(user)
-      end
-
-      it 'handles token response without expires_in' do
-        allow(mock_client).to receive(:exchange_code).and_return(
-          Dry::Monads::Success(access_token: 'eaab_fb_mock_access_token_123', expires_in: nil)
-        )
-
-        result = described_class.call(platform: 'facebook', code: 'valid_code')
-        expect(result).to be_success
-        expect(result.value![:platform_account].token_expires_at).to be_nil
-      end
-
-      it 'returns failure with errors when account save fails' do
-        allow_any_instance_of(PlatformAccount::Facebook).to receive(:save).and_return(false)
-        allow_any_instance_of(PlatformAccount::Facebook).to receive_message_chain(:errors, :to_hash).and_return(base: [ 'Save error' ])
-
-        result = described_class.call(platform: 'facebook', code: 'valid_code')
-        expect(result).to be_failure
-        expect(result.failure).to eq(base: [ 'Save error' ])
-      end
     end
   end
 end

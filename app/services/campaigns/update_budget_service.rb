@@ -19,15 +19,13 @@ module Campaigns
         normalized = nested.merge(normalized)
       end
 
-      target_id = normalized[:id] || provided_campaign&.id
-      normalized[:id] = target_id if target_id.present?
+      normalized[:id] ||= provided_campaign.id if provided_campaign
 
       result = Campaigns::UpdateBudgetContract.new.call(normalized)
       if result.success?
         data = result.to_h
         data[:user] = provided_user if provided_user
         data[:campaign] = provided_campaign if provided_campaign
-        data[:id] = target_id if target_id.present?
         Success(data)
       else
         Failure(result.errors.to_h)
