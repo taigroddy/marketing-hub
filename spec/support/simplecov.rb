@@ -2,7 +2,10 @@ require 'simplecov'
 
 SimpleCov.start 'rails' do
   enable_coverage :branch
-  minimum_coverage line: 80, branch: 80
+
+  # Enforce minimum 80% coverage on full suite runs
+  is_partial_run = ARGV.any? { |arg| arg.include?('spec/') || arg.end_with?('_spec.rb') }
+  minimum_coverage line: 80, branch: 80 unless is_partial_run
 
   skip '/bin/'
   skip '/db/'

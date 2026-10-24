@@ -37,8 +37,15 @@ Rails.application.configure do
   # Make template changes take effect immediately.
   config.action_mailer.perform_caching = false
 
-  # Set localhost to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
+  # Configure Action Mailer with Mailpit SMTP settings
+  config.action_mailer.delivery_method = :smtp
+  config.action_mailer.smtp_settings = {
+    address: ENV.fetch("SMTP_HOST", "mailpit"),
+    port: ENV.fetch("SMTP_PORT", 1025).to_i
+  }
+
+  # Set host to be used by links generated in mailer templates.
+  config.action_mailer.default_url_options = { host: "marketing.localhost" }
 
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
@@ -63,6 +70,10 @@ Rails.application.configure do
 
   # Uncomment if you wish to allow Action Cable access from any origin.
   # config.action_cable.disable_request_forgery_protection = true
+
+  # Allow requests from local domains
+  config.hosts << "marketing.localhost"
+  config.hosts << ".localhost"
 
   # Raise error when a before_action's only/except options reference missing actions.
   config.action_controller.raise_on_missing_callback_actions = true

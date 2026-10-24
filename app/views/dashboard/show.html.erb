@@ -1,0 +1,34 @@
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+  <div class="flex items-center justify-between pb-6 border-b border-gray-100">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+      <p class="text-sm text-gray-500 mt-1">
+        Welcome back, <span class="font-medium text-gray-800"><%= current_user&.email %></span>
+      </p>
+    </div>
+    <div>
+      <%= button_to "Sign Out", logout_path, method: :delete,
+            class: "px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors cursor-pointer" %>
+    </div>
+  </div>
+
+  <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="p-6 bg-blue-50 rounded-lg border border-blue-100">
+      <h3 class="text-sm font-medium text-blue-900">Account Status</h3>
+      <p class="mt-2 text-2xl font-bold text-blue-700">Active</p>
+      <p class="mt-1 text-xs text-blue-600">Email confirmed</p>
+    </div>
+
+    <div class="p-6 bg-emerald-50 rounded-lg border border-emerald-100">
+      <h3 class="text-sm font-medium text-emerald-900">Authentication</h3>
+      <p class="mt-2 text-2xl font-bold text-emerald-700">JWT Token</p>
+      <p class="mt-1 text-xs text-emerald-600">HttpOnly Cookie Enabled</p>
+    </div>
+
+    <div class="p-6 bg-purple-50 rounded-lg border border-purple-100">
+      <h3 class="text-sm font-medium text-purple-900">Platform</h3>
+      <p class="mt-2 text-2xl font-bold text-purple-700">Marketing Hub</p>
+      <p class="mt-1 text-xs text-purple-600">Ready for campaigns</p>
+    </div>
+  </div>
+</div>

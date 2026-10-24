@@ -52,6 +52,14 @@ module Authenticable
   end
 
   def current_user
+    return Current.user if Current.user.present?
+
+    token = extract_jwt_token
+    payload = decode_jwt(token)
+    return nil if payload.blank?
+
+    user = find_user_from_payload(payload)
+    Current.user = user if user.present?
     Current.user
   end
 

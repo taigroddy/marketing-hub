@@ -1,6 +1,6 @@
 # This file is copied to spec/ when you run 'rails generate rspec:install'
 require 'spec_helper'
-ENV['RAILS_ENV'] ||= 'test'
+ENV['RAILS_ENV'] = 'test'
 require_relative '../config/environment'
 # Prevent database truncation if the environment is production
 abort("The Rails environment is running in production mode!") if Rails.env.production?
@@ -34,7 +34,16 @@ begin
 rescue ActiveRecord::PendingMigrationError => e
   abort e.to_s.strip
 end
+
+RSpec::Matchers.define_negated_matcher :not_change, :change
+RSpec::Matchers.define_negated_matcher :not_have_enqueued_mail, :have_enqueued_mail
+
 RSpec.configure do |config|
+  config.include ActiveJob::TestHelper
+
+  config.before do
+    ActiveJob::Base.queue_adapter = :test
+  end
   # Remove this line if you're not using ActiveRecord or ActiveRecord fixtures
   config.fixture_paths = [
     Rails.root.join('spec/fixtures')

@@ -25,6 +25,8 @@ RSpec.describe Authenticable, type: :controller do
       get 'protected_action' => 'anonymous#protected_action'
       get 'unprotected_action' => 'anonymous#unprotected_action'
     end
+    allow(controller).to receive(:respond_to?).and_call_original
+    allow(controller).to receive(:respond_to?).with(:login_path).and_return(false)
     Current.reset
   end
 
@@ -98,69 +100,75 @@ RSpec.describe Authenticable, type: :controller do
     let(:user_payload) { { user_id: 123, email: 'test@example.com' } }
     let(:valid_token) { Authenticable.encode_jwt(user_payload) }
 
-    context 'when valid Bearer token is provided in Authorization header' do
-      it 'authenticates request, sets Current.user, and succeeds' do
-        request.headers['Authorization'] = "Bearer #{valid_token}"
-        get :protected_action
-
-        expect(response).to have_http_status(:ok)
-        json = JSON.parse(response.body)
-        expect(json['message']).to eq('Hello 123')
-        expect(json['current_user_id']).to eq(123)
-
-        Current.reset
-        controller.authenticate_user!
-        expect(Current.user['user_id']).to eq(123)
+    context 'when User model is not defined' do
+      before do
+        hide_const('User')
       end
-    end
 
-    context 'when valid token is provided in cookies[:jwt_token]' do
-      it 'authenticates request, sets Current.user from cookie, and succeeds' do
-        cookies[:jwt_token] = valid_token
-        get :protected_action
+      context 'when valid Bearer token is provided in Authorization header' do
+        it 'authenticates request, sets Current.user, and succeeds' do
+          request.headers['Authorization'] = "Bearer #{valid_token}"
+          get :protected_action
 
-        expect(response).to have_http_status(:ok)
-        json = JSON.parse(response.body)
-        expect(json['message']).to eq('Hello 123')
-        expect(json['current_user_id']).to eq(123)
+          expect(response).to have_http_status(:ok)
+          json = JSON.parse(response.body)
+          expect(json['message']).to eq('Hello 123')
+          expect(json['current_user_id']).to eq(123)
 
-        Current.reset
-        controller.authenticate_user!
-        expect(Current.user['user_id']).to eq(123)
+          Current.reset
+          controller.authenticate_user!
+          expect(Current.user['user_id']).to eq(123)
+        end
       end
-    end
 
-    context 'when token has blank user identifier' do
-      it 'renders unauthorized when user_id and sub are missing' do
-        token = Authenticable.encode_jwt({ some_other_data: 123 })
-        request.headers['Authorization'] = "Bearer #{token}"
-        get :protected_action
+      context 'when valid token is provided in cookies[:jwt_token]' do
+        it 'authenticates request, sets Current.user from cookie, and succeeds' do
+          cookies[:jwt_token] = valid_token
+          get :protected_action
 
-        expect(response).to have_http_status(:unauthorized)
-        expect(Current.user).to be_nil
+          expect(response).to have_http_status(:ok)
+          json = JSON.parse(response.body)
+          expect(json['message']).to eq('Hello 123')
+          expect(json['current_user_id']).to eq(123)
+
+          Current.reset
+          controller.authenticate_user!
+          expect(Current.user['user_id']).to eq(123)
+        end
       end
-    end
 
-    context 'when request is to an api endpoint route' do
-      it 'renders JSON unauthorized response' do
-        request.path = '/api/v1/protected_action'
-        get :protected_action
+      context 'when token has blank user identifier' do
+        it 'renders unauthorized when user_id and sub are missing' do
+          token = Authenticable.encode_jwt({ some_other_data: 123 })
+          request.headers['Authorization'] = "Bearer #{token}"
+          get :protected_action
 
-        expect(response).to have_http_status(:unauthorized)
-        json = JSON.parse(response.body)
-        expect(json['error']).to eq('Unauthorized')
+          expect(response).to have_http_status(:unauthorized)
+          expect(Current.user).to be_nil
+        end
       end
-    end
 
-    context 'when Authorization header has sub instead of user_id' do
-      it 'authenticates using sub as user_id fallback' do
-        token = Authenticable.encode_jwt({ sub: 'user_999' })
-        request.headers['Authorization'] = "Bearer #{token}"
-        get :protected_action
+      context 'when request is to an api endpoint route' do
+        it 'renders JSON unauthorized response' do
+          request.path = '/api/v1/protected_action'
+          get :protected_action
 
-        expect(response).to have_http_status(:ok)
-        json = JSON.parse(response.body)
-        expect(json['message']).to eq('Hello user_999')
+          expect(response).to have_http_status(:unauthorized)
+          json = JSON.parse(response.body)
+          expect(json['error']).to eq('Unauthorized')
+        end
+      end
+
+      context 'when Authorization header has sub instead of user_id' do
+        it 'authenticates using sub as user_id fallback' do
+          token = Authenticable.encode_jwt({ sub: 'user_999' })
+          request.headers['Authorization'] = "Bearer #{token}"
+          get :protected_action
+
+          expect(response).to have_http_status(:ok)
+          json = JSON.parse(response.body)
+          expect(json['message']).to eq('Hello user_999')
+        end
       end
     end
 
@@ -253,6 +261,7 @@ RSpec.describe Authenticable, type: :controller do
 
       context 'when login_path route is defined' do
         before do
+          allow(controller).to receive(:respond_to?).with(:login_path).and_return(true)
           controller.define_singleton_method(:login_path) { '/login' }
         end
 

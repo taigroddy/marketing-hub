@@ -1,14 +1,32 @@
-Rails.application.routes.draw do
-  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
+# frozen_string_literal: true
 
-  # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
-  # Can be used by load balancers and uptime monitors to verify that the app is live.
+Rails.application.routes.draw do
   get "up" => "rails/health#show", as: :rails_health_check
 
-  # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)
-  # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
-  # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
+  # HTML Web Authentication Routes
+  get    "login"                 => "sessions#new",         as: :login
+  post   "login"                 => "sessions#create"
+  delete "logout"                => "sessions#destroy",     as: :logout
+  get    "logout"                => "sessions#destroy"
 
-  # Defines the root path route ("/")
-  # root "posts#index"
+  get    "register"              => "registrations#new",    as: :register
+  post   "register"              => "registrations#create"
+
+  get    "confirm_email/:token"  => "confirmations#show",   as: :confirm_email
+  get    "dashboard"             => "dashboard#show",       as: :dashboard
+
+  root to: "sessions#new"
+
+  # API v1 Authentication Routes
+  namespace :api do
+    namespace :v1 do
+      namespace :auth do
+        post :register
+        post :login
+        get  "confirm_email/:token", action: :confirm_email, as: :confirm_email
+        post "confirm_email/:token", action: :confirm_email
+        get  :me
+      end
+    end
+  end
 end
