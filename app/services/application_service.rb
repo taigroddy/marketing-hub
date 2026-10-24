@@ -27,7 +27,8 @@ class ApplicationService
 
   def validate_with(contract_or_class, input)
     contract = contract_or_class.is_a?(Class) ? contract_or_class.new : contract_or_class
-    result = contract.call(input)
+    normalized_input = input.respond_to?(:to_unsafe_h) ? input.to_unsafe_h : input
+    result = contract.call(normalized_input)
 
     if result.success?
       Success(result.to_h)

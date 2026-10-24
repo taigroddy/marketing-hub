@@ -17,7 +17,7 @@ module Authenticable
 
       decoded = JWT.decode(token, jwt_secret_key, true, { algorithm: "HS256" })
       ActiveSupport::HashWithIndifferentAccess.new(decoded.first)
-    rescue JWT::DecodeError
+    rescue JWT::DecodeError, ArgumentError
       nil
     end
 

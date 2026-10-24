@@ -51,8 +51,10 @@ RSpec.describe Authenticable, type: :controller do
         expect(Authenticable.decode_jwt('   ')).to be_nil
       end
 
-      it 'returns nil for invalid/tampered token' do
+      it 'returns nil for invalid/tampered token or input raising ArgumentError' do
         expect(Authenticable.decode_jwt('invalid.jwt.token')).to be_nil
+        allow(JWT).to receive(:decode).and_raise(ArgumentError.new('Invalid argument'))
+        expect(Authenticable.decode_jwt('any.token.here')).to be_nil
       end
 
       it 'returns nil for expired token' do

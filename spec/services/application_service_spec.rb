@@ -111,6 +111,14 @@ RSpec.describe ApplicationService do
         expect(result.value!).to eq('Received positional_data')
       end
 
+      it 'handles ActionController::Parameters input without raising ArgumentError' do
+        params = ActionController::Parameters.new(name: 'Dave', email: 'dave@example.com')
+        result = service_class.call(params)
+
+        expect(result).to be_success
+        expect(result.value!).to eq(message: 'Hello Dave', email: 'dave@example.com')
+      end
+
       it 'works with manual validate_with helper' do
         success_result = manual_validation_service_class.call(name: 'Bob', email: 'bob@example.com')
         expect(success_result).to be_success
