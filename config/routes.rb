@@ -15,6 +15,8 @@ Rails.application.routes.draw do
   get    "confirm_email/:token"  => "confirmations#show",   as: :confirm_email
   get    "dashboard"             => "dashboard#show",       as: :dashboard
 
+  resources :campaigns, only: [ :index, :show, :new, :create, :edit, :update ]
+
   root to: "sessions#new"
 
   # API v1 Authentication Routes
@@ -27,6 +29,8 @@ Rails.application.routes.draw do
         post "confirm_email/:token", action: :confirm_email
         get  :me
       end
+
+      resources :campaigns, only: [ :index, :show, :create, :update ]
     end
   end
 end

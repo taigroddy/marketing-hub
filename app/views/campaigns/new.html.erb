@@ -1,0 +1,55 @@
+<div class="max-w-2xl mx-auto py-8">
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+    <div class="pb-6 border-b border-gray-100">
+      <h1 class="text-2xl font-bold text-gray-900">Tạo Campaign Mới</h1>
+      <p class="text-sm text-gray-500 mt-1">Điền thông tin chiến dịch để chuẩn bị đồng bộ lên các nền tảng quảng cáo.</p>
+    </div>
+
+    <% if @errors.present? %>
+      <div class="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+        <h4 class="text-sm font-semibold text-red-800">Vui lòng kiểm tra lại thông tin:</h4>
+        <ul class="mt-2 text-sm text-red-700 list-disc list-inside">
+          <% @errors.each do |field, messages| %>
+            <li><%= field.to_s.humanize %>: <%= Array(messages).join(", ") %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <%= form_with url: campaigns_path, method: :post, scope: :campaign, class: "mt-6 space-y-6" do |f| %>
+      <div>
+        <%= f.label :name, "Tên chiến dịch", class: "block text-sm font-medium text-gray-700" %>
+        <%= f.text_field :name, value: @campaign&.name, required: true,
+              placeholder: "Ví dụ: Summer Promotion 2026",
+              class: "mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2.5 border" %>
+      </div>
+
+      <div>
+        <%= f.label :objective, "Mục tiêu (Objective)", class: "block text-sm font-medium text-gray-700" %>
+        <%= f.select :objective,
+              options_for_select([
+                ["Lưu lượng truy cập (OUTCOME_TRAFFIC)", "OUTCOME_TRAFFIC"],
+                ["Tìm kiếm khách hàng tiềm năng (OUTCOME_LEADS)", "OUTCOME_LEADS"],
+                ["Nhận thức về thương hiệu (OUTCOME_AWARENESS)", "OUTCOME_AWARENESS"],
+                ["Tương tác / Bán hàng (OUTCOME_SALES)", "OUTCOME_SALES"]
+              ], @campaign&.objective),
+              { prompt: "-- Chọn mục tiêu chiến dịch --" },
+              { required: true, class: "mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2.5 border bg-white" } %>
+      </div>
+
+      <div>
+        <%= f.label :budget, "Ngân sách ($ USD)", class: "block text-sm font-medium text-gray-700" %>
+        <%= f.number_field :budget, value: @campaign&.budget, step: "0.01", min: "1", required: true,
+              placeholder: "1000.00",
+              class: "mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2.5 border" %>
+      </div>
+
+      <div class="flex items-center justify-end space-x-3 pt-6 border-t border-gray-100">
+        <%= link_to "Hủy", dashboard_path,
+              class: "px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors" %>
+        <%= f.submit "Tạo chiến dịch",
+              class: "px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors cursor-pointer" %>
+      </div>
+    <% end %>
+  </div>
+</div>

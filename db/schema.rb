@@ -10,9 +10,21 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_24_064113) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_24_071948) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "campaigns", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "name", null: false
+    t.string "objective", null: false
+    t.decimal "budget", precision: 12, scale: 2, null: false
+    t.string "status", default: "draft", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "created_at"], name: "index_campaigns_on_user_id_and_created_at"
+    t.index ["user_id"], name: "index_campaigns_on_user_id"
+  end
 
   create_table "users", force: :cascade do |t|
     t.string "email", null: false
@@ -25,4 +37,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_24_064113) do
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
   end
+
+  add_foreign_key "campaigns", "users"
 end

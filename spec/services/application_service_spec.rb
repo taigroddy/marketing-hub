@@ -118,8 +118,6 @@ RSpec.describe ApplicationService do
         expect(result).to be_success
         expect(result.value!).to eq(message: 'Hello Dave', email: 'dave@example.com')
       end
-
-
     end
 
     context 'with a matcher block' do
