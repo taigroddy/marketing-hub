@@ -35,7 +35,7 @@ RSpec.describe Clients::AdCampaign::FacebookClient, type: :client do
     end
 
     context 'when parameters are valid' do
-      it 'creates campaign via Graph API and returns Success with external id' do
+      it 'creates campaign via FacebookAds SDK and returns Success with external id' do
         result = client.create_campaign(**valid_params)
 
         expect(result).to be_success
@@ -59,8 +59,12 @@ RSpec.describe Clients::AdCampaign::FacebookClient, type: :client do
       end
 
       it 'creates campaign without budget when budget is nil' do
-        fake_response = instance_double(Net::HTTPSuccess, is_a?: true, body: '{"id":"120210000000000002"}')
-        allow(Net::HTTP).to receive(:start).and_return(fake_response)
+        fake_campaign = instance_double(FacebookAds::Campaign, id: '120210000000000002', to_hash: { id: '120210000000000002' })
+        mock_campaigns = double('campaigns_edge')
+        mock_ad_account = instance_double(FacebookAds::AdAccount, campaigns: mock_campaigns)
+
+        allow(FacebookAds::AdAccount).to receive(:get).and_return(mock_ad_account)
+        expect(mock_campaigns).to receive(:create).with(hash_excluding(:daily_budget)).and_return(fake_campaign)
 
         result = client.create_campaign(name: 'No Budget Promo', objective: 'OUTCOME_LEADS')
         expect(result).to be_success
@@ -71,7 +75,7 @@ RSpec.describe Clients::AdCampaign::FacebookClient, type: :client do
     context 'when account_id is missing' do
       let(:client_without_account) { described_class.new(access_token: access_token) }
 
-      it 'raises ArgumentError or returns Failure' do
+      it 'raises ArgumentError' do
         expect {
           client_without_account.create_campaign(**valid_params)
         }.to raise_error(ArgumentError, /account_id/)
@@ -99,7 +103,7 @@ RSpec.describe Clients::AdCampaign::FacebookClient, type: :client do
 
     context 'when network connection fails' do
       before do
-        allow(Net::HTTP).to receive(:start).and_raise(Net::OpenTimeout.new('Execution expired'))
+        allow(FacebookAds::AdAccount).to receive(:get).and_raise(Faraday::ConnectionFailed.new('Execution expired'))
       end
 
       it 'returns Failure with exception message' do
@@ -123,7 +127,7 @@ RSpec.describe Clients::AdCampaign::FacebookClient, type: :client do
     end
 
     context 'when update is successful' do
-      it 'updates campaign budget and returns Success' do
+      it 'updates campaign budget via SDK and returns Success' do
         result = client.update_campaign(campaign_id: '120210000000000001', budget: 7500)
 
         expect(result).to be_success
@@ -131,8 +135,9 @@ RSpec.describe Clients::AdCampaign::FacebookClient, type: :client do
       end
 
       it 'updates campaign fields when budget is omitted' do
-        fake_response = instance_double(Net::HTTPSuccess, is_a?: true, body: '{"success":true}')
-        allow(Net::HTTP).to receive(:start).and_return(fake_response)
+        mock_campaign = instance_double(FacebookAds::Campaign)
+        allow(FacebookAds::Campaign).to receive(:get).and_return(mock_campaign)
+        expect(mock_campaign).to receive(:post).with(hash_excluding(:daily_budget)).and_return({ 'success' => true })
 
         result = client.update_campaign(campaign_id: '120210000000000001', status: 'ACTIVE')
         expect(result).to be_success
@@ -151,8 +156,8 @@ RSpec.describe Clients::AdCampaign::FacebookClient, type: :client do
 
     context 'when Facebook returns non-JSON error' do
       before do
-        fake_response = instance_double(Net::HTTPInternalServerError, is_a?: false, code: '500', body: 'Gateway Error')
-        allow(Net::HTTP).to receive(:start).and_return(fake_response)
+        fake_api_response = FacebookAds::APIResponse.new(500, {}, 'Gateway Error')
+        allow(FacebookAds::Campaign).to receive(:get).and_raise(FacebookAds::ServerError.new(fake_api_response))
       end
 
       it 'returns Failure with HTTP error message' do
@@ -175,7 +180,7 @@ RSpec.describe Clients::AdCampaign::FacebookClient, type: :client do
     end
 
     context 'when campaign exists' do
-      it 'fetches campaign details and returns Success' do
+      it 'fetches campaign details via SDK and returns Success' do
         result = client.fetch_campaign(campaign_id: '120210000000000001')
 
         expect(result).to be_success
@@ -198,8 +203,8 @@ RSpec.describe Clients::AdCampaign::FacebookClient, type: :client do
 
     context 'when Facebook returns non-JSON error' do
       before do
-        fake_response = instance_double(Net::HTTPBadGateway, is_a?: false, code: '502', body: 'Bad Gateway')
-        allow(Net::HTTP).to receive(:start).and_return(fake_response)
+        fake_api_response = FacebookAds::APIResponse.new(502, {}, 'Bad Gateway')
+        allow(FacebookAds::Campaign).to receive(:get).and_raise(FacebookAds::ServerError.new(fake_api_response))
       end
 
       it 'returns Failure with HTTP error message' do

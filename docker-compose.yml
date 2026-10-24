@@ -35,8 +35,8 @@ services:
       SMTP_PORT: ${SMTP_PORT:-1025}
       FB_APP_ID: ${FB_APP_ID:-}
       FB_APP_SECRET: ${FB_APP_SECRET:-}
-      FB_AUTHORIZE_REDIRECT_URI: ${FB_AUTHORIZE_REDIRECT_URI:-${FB_AUTHORIZE_REDIRECT_UI:-http://marketing.localhost/oauth/facebook/callback}}
-      FB_AUTHORIZE_REDIRECT_UI: ${FB_AUTHORIZE_REDIRECT_UI:-${FB_AUTHORIZE_REDIRECT_URI:-http://marketing.localhost/oauth/facebook/callback}}
+      FB_AUTHORIZE_REDIRECT_URI: ${FB_AUTHORIZE_REDIRECT_URI:-${FB_AUTHORIZE_REDIRECT_UI:-http://marketing.localhost/v1/facebook/oauth/callback}}
+      FB_AUTHORIZE_REDIRECT_UI: ${FB_AUTHORIZE_REDIRECT_UI:-${FB_AUTHORIZE_REDIRECT_URI:-http://marketing.localhost/v1/facebook/oauth/callback}}
     depends_on:
       db:
         condition: service_healthy
@@ -49,6 +49,22 @@ services:
       - "traefik.http.routers.web.rule=Host(`marketing.localhost`)"
       - "traefik.http.routers.web.entrypoints=web"
       - "traefik.http.services.web.loadbalancer.server.port=3000"
+    networks:
+      - marketing-net
+
+  worker:
+    build: .
+    command: bundle exec sidekiq
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - bundle_data:/usr/local/bundle
+    env_file:
+      - .env
     networks:
       - marketing-net
 

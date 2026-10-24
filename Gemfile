@@ -30,6 +30,7 @@ gem "dry-monads"
 gem "dry-validation"
 gem "blueprinter"
 gem "jwt"
+gem "facebookbusiness", ">= 26.0"
 
 # Background jobs and caching
 gem "sidekiq"

@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
-require "net/http"
-require "json"
-require "uri"
+require "facebookbusiness"
 require "dry/monads"
 
 module AdCampaign
@@ -10,7 +8,6 @@ module AdCampaign
     include Dry::Monads[:result]
 
     API_VERSION = "v21.0"
-    GRAPH_API_BASE_URL = "https://graph.facebook.com/#{API_VERSION}"
     DEFAULT_FETCH_FIELDS = "id,name,objective,status,daily_budget,lifetime_budget"
 
     attr_reader :access_token, :account_id
@@ -29,19 +26,25 @@ module AdCampaign
       return Failure(error: "Missing access token") if token.blank?
 
       act_id = target_account.to_s.start_with?("act_") ? target_account.to_s : "act_#{target_account}"
-      uri = URI.parse("#{GRAPH_API_BASE_URL}/#{act_id}/campaigns")
 
-      payload = {
-        name: name,
-        objective: objective,
-        status: status || "PAUSED",
-        special_ad_categories: extra_params[:special_ad_categories] || [ "NONE" ]
-      }
-      payload[:daily_budget] = extra_params[:daily_budget] || budget if budget || extra_params[:daily_budget]
-      payload.merge!(extra_params.except(:special_ad_categories, :daily_budget))
+      begin
+        session = create_session(token)
+        ad_account = FacebookAds::AdAccount.get(act_id, session)
 
-      perform_post(uri, payload, token) do |body|
-        Success(id: body["id"], raw: body)
+        payload = {
+          name: name,
+          objective: objective,
+          status: status || "PAUSED",
+          special_ad_categories: extra_params[:special_ad_categories] || [ "NONE" ]
+        }
+        payload[:daily_budget] = extra_params[:daily_budget] || budget if budget || extra_params[:daily_budget]
+        payload.merge!(extra_params.except(:special_ad_categories, :daily_budget))
+
+        campaign = ad_account.campaigns.create(payload)
+        raw_data = campaign.respond_to?(:to_hash) ? campaign.to_hash : { id: campaign.id }
+        Success(id: campaign.id, raw: raw_data)
+      rescue StandardError => e
+        handle_error(e)
       end
     end
 
@@ -49,13 +52,19 @@ module AdCampaign
       token = access_token || @access_token
       return Failure(error: "Missing access token") if token.blank?
 
-      uri = URI.parse("#{GRAPH_API_BASE_URL}/#{campaign_id}")
+      begin
+        session = create_session(token)
+        campaign = FacebookAds::Campaign.get(campaign_id, session)
 
-      payload = params.dup
-      payload[:daily_budget] = budget if budget && !payload.key?(:daily_budget)
+        payload = params.dup
+        payload[:daily_budget] = budget if budget && !payload.key?(:daily_budget)
 
-      perform_post(uri, payload, token) do |body|
-        Success(id: campaign_id, success: body["success"] != false, raw: body)
+        response = campaign.post(payload)
+        body = response.is_a?(FacebookAds::APIResponse) ? response.result : response
+        success_flag = body.is_a?(Hash) ? body["success"] != false : true
+        Success(id: campaign_id, success: success_flag, raw: body)
+      rescue StandardError => e
+        handle_error(e)
       end
     end
 
@@ -63,59 +72,50 @@ module AdCampaign
       token = access_token || @access_token
       return Failure(error: "Missing access token") if token.blank?
 
-      target_fields = fields || DEFAULT_FETCH_FIELDS
-      uri = URI.parse("#{GRAPH_API_BASE_URL}/#{campaign_id}")
-      uri.query = URI.encode_www_form(fields: target_fields)
+      begin
+        session = create_session(token)
+        campaign = FacebookAds::Campaign.get(campaign_id, session)
+        target_fields = fields || DEFAULT_FETCH_FIELDS
 
-      perform_get(uri, token)
+        response = campaign.get(fields: target_fields)
+        body = response.is_a?(FacebookAds::APIResponse) ? response.result : response
+        if body.is_a?(Hash)
+          Success(body.transform_keys(&:to_sym))
+        else
+          Success(id: campaign_id, raw: body)
+        end
+      rescue StandardError => e
+        handle_error(e)
+      end
     end
 
     private
 
-    def perform_post(uri, payload, token, &block)
-      req = Net::HTTP::Post.new(uri)
-      req["Accept"] = "application/json"
-      req["Content-Type"] = "application/json"
-      req["Authorization"] = "Bearer #{token}"
-      req.body = JSON.generate(payload)
-
-      res = execute_http_request(uri, req)
-      parse_response(res, &block)
-    rescue StandardError => e
-      Failure(error: e.message)
+    def create_session(token)
+      FacebookAds::Session.new(access_token: token, api_version: API_VERSION)
     end
 
-    def perform_get(uri, token)
-      req = Net::HTTP::Get.new(uri)
-      req["Accept"] = "application/json"
-      req["Authorization"] = "Bearer #{token}"
-
-      res = execute_http_request(uri, req)
-      parse_response(res)
-    rescue StandardError => e
-      Failure(error: e.message)
-    end
-
-    def execute_http_request(uri, req)
-      Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https") do |http|
-        http.open_timeout = 10
-        http.read_timeout = 10
-        http.request(req)
-      end
-    end
-
-    def parse_response(res)
-      body = begin
-        JSON.parse(res.body)
-      rescue JSON::ParserError
-        { "raw_body" => res.body }
-      end
-
-      if res.is_a?(Net::HTTPSuccess) && !body.key?("error")
-        block_given? ? yield(body) : Success(body.transform_keys(&:to_sym))
-      else
-        error_msg = body.dig("error", "message") || "HTTP #{res.code} Error"
+    def handle_error(error)
+      if error.is_a?(FacebookAds::APIError)
+        api_resp = error.instance_variable_get(:@api_response)
+        body = extract_error_body(error, api_resp)
+        status_code = api_resp&.status_code
+        error_msg = (body.is_a?(Hash) && body.dig("error", "message")) || (status_code ? "HTTP #{status_code} Error" : error.message)
         Failure(error: error_msg, details: body)
+      else
+        Failure(error: error.message)
+      end
+    end
+
+    def extract_error_body(error, api_resp)
+      if api_resp&.result.is_a?(Hash)
+        api_resp.result
+      else
+        begin
+          JSON.parse(error.message)
+        rescue JSON::ParserError
+          { "raw_body" => error.message }
+        end
       end
     end
   end

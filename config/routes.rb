@@ -22,6 +22,8 @@ Rails.application.routes.draw do
   root to: "sessions#new"
 
   # OAuth Platform Accounts routes (Direct v1 pattern)
+  get "oauth/:platform/callback" => "api/v1/platform_accounts#callback", constraints: { platform: /(facebook|google)/ }
+
   scope "v1/:platform", constraints: { platform: /(facebook|google)/ } do
     get  "oauth/authorize" => "api/v1/platform_accounts#authorize", as: :platform_oauth_authorize
     get  "oauth/callback"  => "api/v1/platform_accounts#callback",  as: :platform_oauth_callback

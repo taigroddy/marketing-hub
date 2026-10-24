@@ -178,6 +178,13 @@ RSpec.describe "Api::V1::PlatformAccounts", type: :request do
       expect(json["error"]).to include("Google platform integration coming soon")
     end
 
+    it "routes alias /oauth/:platform/callback to platform accounts callback" do
+      get "/oauth/google/callback", params: { code: "google_code" }, headers: headers
+      expect(response).to have_http_status(:unprocessable_content)
+      json = JSON.parse(response.body)
+      expect(json["error"]).to include("Google platform integration coming soon")
+    end
+
     it "redirects to dashboard when callback is requested as HTML" do
       allow(Clients::OAuth::FacebookClient).to receive(:new).and_return(mock_client)
       allow(mock_client).to receive(:exchange_code).with(code: "valid_fb_code", redirect_uri: nil).and_return(

@@ -40,8 +40,8 @@ module App
     config.generators.system_tests = nil
 
     # Active Record Encryption configuration
-    if Rails.env.production? && ENV["ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY"].blank?
-      raise "ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY must be configured in production"
+    if Rails.env.production? && (ENV["ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY"].blank? || ENV["ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY"].blank? || ENV["ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT"].blank?)
+      raise "ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY, DETERMINISTIC_KEY, and KEY_DERIVATION_SALT must be configured in production"
     end
 
     config.active_record.encryption.primary_key = ENV["ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY"] ||

@@ -2,17 +2,15 @@
 http_interactions:
 - request:
     method: post
-    uri: https://graph.facebook.com/v21.0/act_123456789/campaigns
+    uri: https://graph.facebook.com/v21.0/act_123456789/campaigns?access_token=mock_access_token_fb_123456
     body:
       encoding: UTF-8
-      string: '{"name":"Summer Promo 2026","objective":"OUTCOME_TRAFFIC","status":"PAUSED","special_ad_categories":["NONE"],"daily_budget":5000}'
+      string: daily_budget=5000&name=Summer+Promo+2026&objective=OUTCOME_TRAFFIC&special_ad_categories=%5B%22NONE%22%5D&status=PAUSED
     headers:
-      Accept:
-      - application/json
+      User-Agent:
+      - fbbizsdk-ruby-v26.0.2
       Content-Type:
-      - application/json
-      Authorization:
-      - Bearer mock_access_token_fb_123456
+      - application/x-www-form-urlencoded
   response:
     status:
       code: 200
@@ -26,17 +24,15 @@ http_interactions:
   recorded_at: Sat, 24 Oct 2026 12:00:00 GMT
 - request:
     method: post
-    uri: https://graph.facebook.com/v21.0/act_123456789/campaigns
+    uri: https://graph.facebook.com/v21.0/act_123456789/campaigns?access_token=mock_access_token_fb_123456
     body:
       encoding: UTF-8
-      string: '{"name":"","objective":"INVALID","status":"PAUSED","special_ad_categories":["NONE"],"daily_budget":-1}'
+      string: daily_budget=-1&name=&objective=INVALID&special_ad_categories=%5B%22NONE%22%5D&status=PAUSED
     headers:
-      Accept:
-      - application/json
+      User-Agent:
+      - fbbizsdk-ruby-v26.0.2
       Content-Type:
-      - application/json
-      Authorization:
-      - Bearer mock_access_token_fb_123456
+      - application/x-www-form-urlencoded
   response:
     status:
       code: 400
@@ -50,17 +46,15 @@ http_interactions:
   recorded_at: Sat, 24 Oct 2026 12:01:00 GMT
 - request:
     method: post
-    uri: https://graph.facebook.com/v21.0/120210000000000001
+    uri: https://graph.facebook.com/v21.0/120210000000000001?access_token=mock_access_token_fb_123456
     body:
       encoding: UTF-8
-      string: '{"daily_budget":7500}'
+      string: daily_budget=7500
     headers:
-      Accept:
-      - application/json
+      User-Agent:
+      - fbbizsdk-ruby-v26.0.2
       Content-Type:
-      - application/json
-      Authorization:
-      - Bearer mock_access_token_fb_123456
+      - application/x-www-form-urlencoded
   response:
     status:
       code: 200
@@ -74,17 +68,15 @@ http_interactions:
   recorded_at: Sat, 24 Oct 2026 12:02:00 GMT
 - request:
     method: post
-    uri: https://graph.facebook.com/v21.0/invalid_campaign_id
+    uri: https://graph.facebook.com/v21.0/invalid_campaign_id?access_token=mock_access_token_fb_123456
     body:
       encoding: UTF-8
-      string: '{"daily_budget":-100}'
+      string: daily_budget=-100
     headers:
-      Accept:
-      - application/json
+      User-Agent:
+      - fbbizsdk-ruby-v26.0.2
       Content-Type:
-      - application/json
-      Authorization:
-      - Bearer mock_access_token_fb_123456
+      - application/x-www-form-urlencoded
   response:
     status:
       code: 400
@@ -98,15 +90,13 @@ http_interactions:
   recorded_at: Sat, 24 Oct 2026 12:03:00 GMT
 - request:
     method: get
-    uri: https://graph.facebook.com/v21.0/120210000000000001?fields=id,name,objective,status,daily_budget,lifetime_budget
+    uri: https://graph.facebook.com/v21.0/120210000000000001?access_token=mock_access_token_fb_123456&fields=id,name,objective,status,daily_budget,lifetime_budget
     body:
       encoding: US-ASCII
       string: ''
     headers:
-      Accept:
-      - application/json
-      Authorization:
-      - Bearer mock_access_token_fb_123456
+      User-Agent:
+      - fbbizsdk-ruby-v26.0.2
   response:
     status:
       code: 200
@@ -120,15 +110,13 @@ http_interactions:
   recorded_at: Sat, 24 Oct 2026 12:04:00 GMT
 - request:
     method: get
-    uri: https://graph.facebook.com/v21.0/non_existent_campaign?fields=id,name,objective,status,daily_budget,lifetime_budget
+    uri: https://graph.facebook.com/v21.0/non_existent_campaign?access_token=mock_access_token_fb_123456&fields=id,name,objective,status,daily_budget,lifetime_budget
     body:
       encoding: US-ASCII
       string: ''
     headers:
-      Accept:
-      - application/json
-      Authorization:
-      - Bearer mock_access_token_fb_123456
+      User-Agent:
+      - fbbizsdk-ruby-v26.0.2
   response:
     status:
       code: 404
