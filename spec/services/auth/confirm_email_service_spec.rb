@@ -69,5 +69,30 @@ RSpec.describe Auth::ConfirmEmailService do
         expect(result.failure).to eq(:already_confirmed)
       end
     end
+    context 'when confirmation token is expired' do
+      let!(:expired_user) do
+        User.create!(
+          email: 'expired@example.com',
+          password: 'Password123!',
+          confirmation_token: 'expired-token-999',
+          confirmation_sent_at: 25.hours.ago
+        )
+      end
+
+      it 'returns failure with resource_not_found when sent > 24 hours ago' do
+        result = described_class.call(token: 'expired-token-999')
+        expect(result).to be_failure
+        expect(result.failure).to eq([ :resource_not_found, 'Invalid or expired confirmation token' ])
+        expect(expired_user.reload.confirmed?).to be false
+      end
+
+      it 'returns failure with resource_not_found when confirmation_sent_at is nil' do
+        expired_user.update_column(:confirmation_sent_at, nil)
+        result = described_class.call(token: 'expired-token-999')
+        expect(result).to be_failure
+        expect(result.failure).to eq([ :resource_not_found, 'Invalid or expired confirmation token' ])
+        expect(expired_user.reload.confirmed?).to be false
+      end
+    end
   end
 end

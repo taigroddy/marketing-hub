@@ -180,6 +180,18 @@ RSpec.describe 'Api::V1::Auth', type: :request do
         expect(json['error']).to include('Invalid or expired')
       end
     end
+
+    context 'with expired token' do
+      it 'returns 422 unprocessable entity when token is expired' do
+        user.update_column(:confirmation_sent_at, 48.hours.ago)
+        get "/api/v1/auth/confirm_email/#{user.confirmation_token}", as: :json
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        json = JSON.parse(response.body)
+        expect(json['error']).to include('Invalid or expired')
+        expect(user.reload.confirmed?).to be false
+      end
+    end
   end
 
   describe 'GET /api/v1/auth/me' do

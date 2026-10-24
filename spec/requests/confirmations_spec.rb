@@ -31,12 +31,22 @@ RSpec.describe 'Confirmations', type: :request do
     end
 
     context 'with invalid or expired token' do
-      it 'redirects to /login with alert' do
+      it 'redirects to /login with alert when token does not exist' do
         get '/confirm_email/bogus-token'
 
         expect(response).to redirect_to('/login')
         expect(flash[:alert]).to include('Invalid or expired')
         expect(cookies[:jwt_token]).to be_blank
+      end
+
+      it 'redirects to /login with alert when token is expired' do
+        user.update_column(:confirmation_sent_at, 2.days.ago)
+        get '/confirm_email/link-token-777'
+
+        expect(response).to redirect_to('/login')
+        expect(flash[:alert]).to include('Invalid or expired')
+        expect(cookies[:jwt_token]).to be_blank
+        expect(user.reload.confirmed?).to be false
       end
     end
   end
