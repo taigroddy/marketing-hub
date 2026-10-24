@@ -12,6 +12,7 @@ SimpleCov.start 'rails' do
   skip '/spec/'
   skip '/config/'
 
+  group 'Clients', 'app/clients'
   group 'Services', 'app/services'
   group 'Contracts', 'app/contracts'
   group 'Blueprints', 'app/blueprints'

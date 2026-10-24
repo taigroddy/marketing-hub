@@ -1,0 +1,83 @@
+---
+http_interactions:
+- request:
+    method: get
+    uri: https://graph.facebook.com/v21.0/oauth/access_token?client_id=<FB_APP_ID>&client_secret=<FB_APP_SECRET>&code=valid_auth_code&redirect_uri=http://marketing.localhost/oauth/facebook/callback
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept:
+      - application/json
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: '{"access_token":"mock_access_token_fb_123456","token_type":"bearer","expires_in":5184000}'
+  recorded_at: Sat, 24 Oct 2026 12:00:00 GMT
+- request:
+    method: get
+    uri: https://graph.facebook.com/v21.0/oauth/access_token?client_id=<FB_APP_ID>&client_secret=<FB_APP_SECRET>&code=invalid_code&redirect_uri=http://marketing.localhost/oauth/facebook/callback
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept:
+      - application/json
+  response:
+    status:
+      code: 400
+      message: Bad Request
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: '{"error":{"message":"Invalid verification code format.","type":"OAuthException","code":100,"fbtrace_id":"Abc123Xyz"}}'
+  recorded_at: Sat, 24 Oct 2026 12:01:00 GMT
+- request:
+    method: get
+    uri: https://graph.facebook.com/v21.0/oauth/access_token?client_id=<FB_APP_ID>&client_secret=<FB_APP_SECRET>&fb_exchange_token=short_lived_token&grant_type=fb_exchange_token
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept:
+      - application/json
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: '{"access_token":"mock_long_lived_token_fb_789","token_type":"bearer","expires_in":5184000}'
+  recorded_at: Sat, 24 Oct 2026 12:02:00 GMT
+- request:
+    method: get
+    uri: https://graph.facebook.com/v21.0/oauth/access_token?client_id=<FB_APP_ID>&client_secret=<FB_APP_SECRET>&fb_exchange_token=expired_or_invalid_token&grant_type=fb_exchange_token
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept:
+      - application/json
+  response:
+    status:
+      code: 400
+      message: Bad Request
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: '{"error":{"message":"Error validating access token: Session has expired.","type":"OAuthException","code":190,"fbtrace_id":"Def456Uvw"}}'
+  recorded_at: Sat, 24 Oct 2026 12:03:00 GMT
+recorded_with: VCR 6.3.1

@@ -1,0 +1,143 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: https://graph.facebook.com/v21.0/act_123456789/campaigns
+    body:
+      encoding: UTF-8
+      string: '{"name":"Summer Promo 2026","objective":"OUTCOME_TRAFFIC","status":"PAUSED","special_ad_categories":["NONE"],"daily_budget":5000}'
+    headers:
+      Accept:
+      - application/json
+      Content-Type:
+      - application/json
+      Authorization:
+      - Bearer mock_access_token_fb_123456
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: '{"id":"120210000000000001"}'
+  recorded_at: Sat, 24 Oct 2026 12:00:00 GMT
+- request:
+    method: post
+    uri: https://graph.facebook.com/v21.0/act_123456789/campaigns
+    body:
+      encoding: UTF-8
+      string: '{"name":"","objective":"INVALID","status":"PAUSED","special_ad_categories":["NONE"],"daily_budget":-1}'
+    headers:
+      Accept:
+      - application/json
+      Content-Type:
+      - application/json
+      Authorization:
+      - Bearer mock_access_token_fb_123456
+  response:
+    status:
+      code: 400
+      message: Bad Request
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: '{"error":{"message":"Invalid parameter: campaign name cannot be empty.","type":"OAuthException","code":100,"fbtrace_id":"CampErr123"}}'
+  recorded_at: Sat, 24 Oct 2026 12:01:00 GMT
+- request:
+    method: post
+    uri: https://graph.facebook.com/v21.0/120210000000000001
+    body:
+      encoding: UTF-8
+      string: '{"daily_budget":7500}'
+    headers:
+      Accept:
+      - application/json
+      Content-Type:
+      - application/json
+      Authorization:
+      - Bearer mock_access_token_fb_123456
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: '{"success":true}'
+  recorded_at: Sat, 24 Oct 2026 12:02:00 GMT
+- request:
+    method: post
+    uri: https://graph.facebook.com/v21.0/invalid_campaign_id
+    body:
+      encoding: UTF-8
+      string: '{"daily_budget":-100}'
+    headers:
+      Accept:
+      - application/json
+      Content-Type:
+      - application/json
+      Authorization:
+      - Bearer mock_access_token_fb_123456
+  response:
+    status:
+      code: 400
+      message: Bad Request
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: '{"error":{"message":"Unsupported post request. Object with ID does not exist.","type":"GraphMethodException","code":100,"fbtrace_id":"UpdErr456"}}'
+  recorded_at: Sat, 24 Oct 2026 12:03:00 GMT
+- request:
+    method: get
+    uri: https://graph.facebook.com/v21.0/120210000000000001?fields=id,name,objective,status,daily_budget,lifetime_budget
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Bearer mock_access_token_fb_123456
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: '{"id":"120210000000000001","name":"Summer Promo 2026","objective":"OUTCOME_TRAFFIC","status":"PAUSED","daily_budget":"5000"}'
+  recorded_at: Sat, 24 Oct 2026 12:04:00 GMT
+- request:
+    method: get
+    uri: https://graph.facebook.com/v21.0/non_existent_campaign?fields=id,name,objective,status,daily_budget,lifetime_budget
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Bearer mock_access_token_fb_123456
+  response:
+    status:
+      code: 404
+      message: Not Found
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: '{"error":{"message":"Object with ID ''non_existent_campaign'' does not exist.","type":"GraphMethodException","code":100,"fbtrace_id":"FetchErr789"}}'
+  recorded_at: Sat, 24 Oct 2026 12:05:00 GMT
+recorded_with: VCR 6.3.1
