@@ -1,16 +1,13 @@
 # frozen_string_literal: true
 
 class User < ApplicationRecord
-  has_secure_password
+  has_secure_password validations: false
 
   has_many :campaigns, dependent: :destroy
   has_many :platform_accounts, dependent: :destroy
+  has_many :user_tokens, dependent: :destroy
 
   before_validation :normalize_email
-
-  validates :email, presence: true,
-                    uniqueness: { case_sensitive: false },
-                    format: { with: URI::MailTo::EMAIL_REGEXP }
 
   def confirmed?
     confirmed_at.present?

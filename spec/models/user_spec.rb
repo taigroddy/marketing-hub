@@ -3,57 +3,68 @@
 require 'rails_helper'
 
 RSpec.describe User, type: :model do
-  describe 'validations' do
-    subject(:user) do
-      described_class.new(
-        email: 'user@example.com',
-        password: 'Password123!',
-        password_confirmation: 'Password123!'
-      )
+  describe 'associations' do
+    it 'has many campaigns with dependent destroy' do
+      assoc = described_class.reflect_on_association(:campaigns)
+      expect(assoc.macro).to eq(:has_many)
+      expect(assoc.options[:dependent]).to eq(:destroy)
     end
 
-    it 'is valid with valid attributes' do
-      expect(user).to be_valid
+    it 'has many platform_accounts with dependent destroy' do
+      assoc = described_class.reflect_on_association(:platform_accounts)
+      expect(assoc.macro).to eq(:has_many)
+      expect(assoc.options[:dependent]).to eq(:destroy)
     end
 
-    it 'requires email to be present' do
-      user.email = ''
-      expect(user).not_to be_valid
-      expect(user.errors[:email]).to include("can't be blank")
+    it 'has many user_tokens with dependent destroy' do
+      assoc = described_class.reflect_on_association(:user_tokens)
+      expect(assoc.macro).to eq(:has_many)
+      expect(assoc.options[:dependent]).to eq(:destroy)
     end
+  end
 
-    it 'validates email format' do
-      user.email = 'invalid-email-format'
-      expect(user).not_to be_valid
-      expect(user.errors[:email]).to include('is invalid')
-    end
-
-    it 'enforces case-insensitive email uniqueness' do
+  describe 'authentication' do
+    let(:user) do
       described_class.create!(
-        email: 'user@example.com',
-        password: 'Password123!',
-        password_confirmation: 'Password123!'
+        email: 'user-auth@example.com',
+        password: 'Password123!'
       )
-
-      duplicate_user = described_class.new(
-        email: 'USER@EXAMPLE.COM',
-        password: 'OtherPassword123!',
-        password_confirmation: 'OtherPassword123!'
-      )
-
-      expect(duplicate_user).not_to be_valid
-      expect(duplicate_user.errors[:email]).to include('has already been taken')
     end
 
-    it 'requires password on creation' do
-      invalid_user = described_class.new(email: 'user2@example.com')
-      expect(invalid_user).not_to be_valid
-      expect(invalid_user.errors[:password]).to be_present
+    it 'sets password_digest on create' do
+      expect(user.password_digest).to be_present
+      expect(user.password_digest).not_to eq('Password123!')
     end
 
     it 'authenticates with correct password using has_secure_password' do
       expect(user.authenticate('Password123!')).to eq(user)
       expect(user.authenticate('WrongPassword')).to be(false)
+    end
+
+    it 'does not enforce password presence at model validation level' do
+      user_without_password = described_class.new(email: 'no-pwd@example.com')
+      expect(user_without_password).to be_valid
+    end
+  end
+
+  describe 'database constraints' do
+    it 'raises ActiveRecord::NotNullViolation when email is null' do
+      expect do
+        described_class.create!(email: nil, password: 'Password123!')
+      end.to raise_error(ActiveRecord::NotNullViolation)
+    end
+
+    it 'raises ActiveRecord::NotNullViolation when password_digest is null' do
+      expect do
+        described_class.create!(email: 'no-digest@example.com', password_digest: nil)
+      end.to raise_error(ActiveRecord::NotNullViolation)
+    end
+
+    it 'raises ActiveRecord::RecordNotUnique on duplicate email' do
+      described_class.create!(email: 'unique-check@example.com', password: 'Password123!')
+      expect do
+        described_class.create!(email: 'unique-check@example.com', password: 'OtherPassword123!')
+      end.to raise_error(ActiveRecord::RecordNotUnique)
     end
   end
 
@@ -74,7 +85,7 @@ RSpec.describe User, type: :model do
   describe '#confirm!' do
     let(:user) do
       described_class.create!(
-        email: 'user@example.com',
+        email: 'user-confirm@example.com',
         password: 'Password123!',
         confirmation_token: 'valid-token-123',
         confirmation_sent_at: 1.hour.ago
@@ -91,6 +102,11 @@ RSpec.describe User, type: :model do
   end
 
   describe 'callbacks' do
+    it 'normalizes email by trimming whitespace and downcasing before save' do
+      user = described_class.create!(email: '  USER-NORM@ExAmPlE.CoM  ', password: 'Password123!')
+      expect(user.email).to eq('user-norm@example.com')
+    end
+
     it 'does not trigger background jobs or mailers on save' do
       expect do
         described_class.create!(

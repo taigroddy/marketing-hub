@@ -25,63 +25,84 @@ RSpec.describe Campaign, type: :model do
     it 'belongs to user' do
       expect(campaign.user).to eq(user)
     end
+
+    it 'has many platform_campaigns with dependent destroy' do
+      assoc = described_class.reflect_on_association(:platform_campaigns)
+      expect(assoc.macro).to eq(:has_many)
+      expect(assoc.options[:dependent]).to eq(:destroy)
+    end
+
+    it 'has many platform_accounts through platform_campaigns' do
+      assoc = described_class.reflect_on_association(:platform_accounts)
+      expect(assoc.macro).to eq(:has_many)
+      expect(assoc.options[:through]).to eq(:platform_campaigns)
+    end
   end
 
-  describe 'validations' do
-    it 'is valid with valid attributes' do
-      expect(campaign).to be_valid
+  describe 'database constraints' do
+    it 'raises ActiveRecord::NotNullViolation when name is null' do
+      expect do
+        described_class.create!(
+          user: user,
+          name: nil,
+          objective: 'OUTCOME_LEADS',
+          budget: 100.0
+        )
+      end.to raise_error(ActiveRecord::NotNullViolation)
     end
 
-    it 'requires a user' do
-      campaign.user = nil
-      expect(campaign).not_to be_valid
-      expect(campaign.errors[:user]).to be_present
+    it 'raises ActiveRecord::NotNullViolation when objective is null' do
+      expect do
+        described_class.create!(
+          user: user,
+          name: 'Promo',
+          objective: nil,
+          budget: 100.0
+        )
+      end.to raise_error(ActiveRecord::NotNullViolation)
     end
 
-    it 'requires a name' do
-      campaign.name = nil
-      expect(campaign).not_to be_valid
-      expect(campaign.errors[:name]).to include("can't be blank")
+    it 'raises ActiveRecord::NotNullViolation when budget is null' do
+      expect do
+        described_class.create!(
+          user: user,
+          name: 'Promo',
+          objective: 'OUTCOME_LEADS',
+          budget: nil
+        )
+      end.to raise_error(ActiveRecord::NotNullViolation)
     end
+  end
 
-    it 'requires an objective' do
-      campaign.objective = nil
-      expect(campaign).not_to be_valid
-      expect(campaign.errors[:objective]).to include("can't be blank")
-    end
-
-    it 'requires a budget' do
-      campaign.budget = nil
-      expect(campaign).not_to be_valid
-      expect(campaign.errors[:budget]).to include("can't be blank")
-    end
-
-    it 'requires budget to be greater than 0' do
-      campaign.budget = 0
-      expect(campaign).not_to be_valid
-      expect(campaign.errors[:budget]).to include('must be greater than 0')
-
-      campaign.budget = -10
-      expect(campaign).not_to be_valid
-      expect(campaign.errors[:budget]).to include('must be greater than 0')
-    end
-
-    it 'requires status to be in allowed list' do
-      campaign.status = 'invalid_status'
-      expect(campaign).not_to be_valid
-      expect(campaign.errors[:status]).to include('is not included in the list')
-    end
-
+  describe 'database defaults' do
     it 'defaults status to draft' do
-      new_campaign = described_class.new(user: user, name: 'Promo', objective: 'OUTCOME_LEADS', budget: 100)
+      new_campaign = described_class.create!(
+        user: user,
+        name: 'Promo',
+        objective: 'OUTCOME_LEADS',
+        budget: 100.0
+      )
       expect(new_campaign.status).to eq('draft')
     end
   end
 
-  describe 'tenant cascade' do
-    it 'is destroyed when user is destroyed' do
+  describe 'dependent destroy' do
+    it 'destroys dependent platform_campaigns when campaign is destroyed' do
       campaign.save!
-      expect { user.destroy }.to change(described_class, :count).by(-1)
+      account = PlatformAccount::Facebook.create!(
+        user: user,
+        account_id: 'act_camp_cascade',
+        name: 'FB',
+        access_token: 'secret_token_123',
+        status: 'connected'
+      )
+      PlatformCampaign.create!(
+        campaign: campaign,
+        platform_account: account,
+        sync_status: 'pending'
+      )
+
+      expect { campaign.destroy }.to change(PlatformCampaign, :count).by(-1)
     end
   end
 

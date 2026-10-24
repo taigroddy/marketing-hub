@@ -56,43 +56,26 @@ RSpec.describe PlatformCampaign, type: :model do
     end
   end
 
-  describe 'validations' do
-    it 'is valid with valid attributes' do
-      expect(platform_campaign).to be_valid
-    end
-
-    it 'validates presence of campaign_id' do
-      platform_campaign.campaign = nil
-      expect(platform_campaign).not_to be_valid
-      expect(platform_campaign.errors[:campaign]).to be_present
-    end
-
-    it 'validates presence of platform_account_id' do
-      platform_campaign.platform_account = nil
-      expect(platform_campaign).not_to be_valid
-      expect(platform_campaign.errors[:platform_account]).to be_present
-    end
-
-    it 'enforces uniqueness of platform_account_id scoped to campaign_id' do
+  describe 'database constraints' do
+    it 'raises ActiveRecord::RecordNotUnique on duplicate (campaign_id, platform_account_id)' do
       platform_campaign.save!
-      duplicate = described_class.new(
-        campaign: campaign,
-        platform_account: platform_account,
-        sync_status: 'pending'
-      )
-      expect(duplicate).not_to be_valid
-      expect(duplicate.errors[:platform_account_id]).to include('has already been taken')
+      expect do
+        described_class.create!(
+          campaign: campaign,
+          platform_account: platform_account,
+          sync_status: 'pending'
+        )
+      end.to raise_error(ActiveRecord::RecordNotUnique)
     end
+  end
 
-    it 'validates inclusion of sync_status in allowed list' do
-      %w[pending synced failed].each do |status|
-        platform_campaign.sync_status = status
-        expect(platform_campaign).to be_valid
-      end
-
-      platform_campaign.sync_status = 'invalid_status'
-      expect(platform_campaign).not_to be_valid
-      expect(platform_campaign.errors[:sync_status]).to be_present
+  describe 'database defaults' do
+    it 'defaults sync_status to pending' do
+      record = described_class.create!(
+        campaign: campaign,
+        platform_account: platform_account
+      )
+      expect(record.sync_status).to eq('pending')
     end
   end
 

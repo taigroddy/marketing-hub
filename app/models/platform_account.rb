@@ -8,11 +8,6 @@ class PlatformAccount < ApplicationRecord
   encrypts :access_token
   encrypts :refresh_token
 
-  validates :type, presence: true
-  validates :account_id, presence: true, uniqueness: { scope: [ :user_id, :type ] }
-  validates :access_token, presence: true
-  validates :status, presence: true
-
   scope :connected, -> { where(status: "connected") }
 
   def connected?

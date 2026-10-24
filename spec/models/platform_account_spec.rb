@@ -28,14 +28,14 @@ RSpec.describe PlatformAccount, type: :model do
   describe 'STI hierarchy' do
     it 'allows instantiating PlatformAccount::Facebook subclass' do
       fb_account = PlatformAccount::Facebook.new(valid_attributes.except(:type))
-      expect(fb_account).to be_a(PlatformAccount)
+      expect(fb_account).to be_a(described_class)
       expect(fb_account).to be_a(PlatformAccount::Facebook)
       expect(fb_account.type).to eq('PlatformAccount::Facebook')
     end
 
     it 'allows instantiating PlatformAccount::Google subclass' do
       google_account = PlatformAccount::Google.new(valid_attributes.except(:type).merge(account_id: 'goog_987654'))
-      expect(google_account).to be_a(PlatformAccount)
+      expect(google_account).to be_a(described_class)
       expect(google_account).to be_a(PlatformAccount::Google)
       expect(google_account.type).to eq('PlatformAccount::Google')
     end
@@ -47,41 +47,43 @@ RSpec.describe PlatformAccount, type: :model do
       expect(account.user).to eq(user)
     end
 
-    it 'is destroyed when user is destroyed' do
-      account = described_class.create!(valid_attributes)
-      expect { user.destroy }.to change(described_class, :count).by(-1)
+    it 'has many platform_campaigns with dependent destroy' do
+      assoc = described_class.reflect_on_association(:platform_campaigns)
+      expect(assoc.macro).to eq(:has_many)
+      expect(assoc.options[:dependent]).to eq(:destroy)
+    end
+
+    it 'has many campaigns through platform_campaigns' do
+      assoc = described_class.reflect_on_association(:campaigns)
+      expect(assoc.macro).to eq(:has_many)
+      expect(assoc.options[:through]).to eq(:platform_campaigns)
     end
   end
 
-  describe 'validations' do
-    it 'is valid with valid attributes' do
-      account = described_class.new(valid_attributes)
-      expect(account).to be_valid
+  describe 'database constraints' do
+    it 'raises ActiveRecord::NotNullViolation when type is null' do
+      expect do
+        described_class.create!(valid_attributes.merge(type: nil))
+      end.to raise_error(ActiveRecord::NotNullViolation)
     end
 
-    it 'requires account_id' do
-      account = described_class.new(valid_attributes.merge(account_id: nil))
-      expect(account).not_to be_valid
-      expect(account.errors[:account_id]).to include("can't be blank")
+    it 'raises ActiveRecord::NotNullViolation when account_id is null' do
+      expect do
+        described_class.create!(valid_attributes.merge(account_id: nil))
+      end.to raise_error(ActiveRecord::NotNullViolation)
     end
 
-    it 'requires access_token' do
-      account = described_class.new(valid_attributes.merge(access_token: nil))
-      expect(account).not_to be_valid
-      expect(account.errors[:access_token]).to include("can't be blank")
+    it 'raises ActiveRecord::NotNullViolation when access_token is null' do
+      expect do
+        described_class.create!(valid_attributes.merge(access_token: nil))
+      end.to raise_error(ActiveRecord::NotNullViolation)
     end
 
-    it 'requires status' do
-      account = described_class.new(valid_attributes.merge(status: nil))
-      expect(account).not_to be_valid
-      expect(account.errors[:status]).to include("can't be blank")
-    end
-
-    it 'enforces uniqueness of account_id scoped to user and type' do
+    it 'raises ActiveRecord::RecordNotUnique on duplicate (user_id, type, account_id)' do
       described_class.create!(valid_attributes)
-      duplicate = described_class.new(valid_attributes)
-      expect(duplicate).not_to be_valid
-      expect(duplicate.errors[:account_id]).to include('has already been taken')
+      expect do
+        described_class.create!(valid_attributes)
+      end.to raise_error(ActiveRecord::RecordNotUnique)
     end
 
     it 'allows same account_id for different users' do
@@ -91,14 +93,21 @@ RSpec.describe PlatformAccount, type: :model do
         confirmed_at: Time.current
       )
       described_class.create!(valid_attributes)
-      account_other = described_class.new(valid_attributes.merge(user: other_user))
-      expect(account_other).to be_valid
+      account_other = described_class.create!(valid_attributes.merge(user: other_user))
+      expect(account_other).to be_persisted
     end
 
     it 'allows same account_id for different platform types' do
       described_class.create!(valid_attributes)
-      google_account = PlatformAccount::Google.new(valid_attributes.except(:type))
-      expect(google_account).to be_valid
+      google_account = PlatformAccount::Google.create!(valid_attributes.except(:type))
+      expect(google_account).to be_persisted
+    end
+  end
+
+  describe 'database defaults' do
+    it 'defaults status to connected' do
+      account = described_class.create!(valid_attributes.except(:status))
+      expect(account.status).to eq('connected')
     end
   end
 
@@ -114,12 +123,10 @@ RSpec.describe PlatformAccount, type: :model do
         )
       )
 
-      # In-memory and reloaded instance provides plaintext
       reloaded = described_class.find(account.id)
       expect(reloaded.access_token).to eq(raw_access_token)
       expect(reloaded.refresh_token).to eq(raw_refresh_token)
 
-      # Raw column data in database does NOT match plaintext
       raw_sql = "SELECT access_token, refresh_token FROM platform_accounts WHERE id = #{account.id}"
       raw_row = ActiveRecord::Base.connection.select_one(raw_sql)
 
@@ -159,6 +166,22 @@ RSpec.describe PlatformAccount, type: :model do
 
     it '#platform_name returns readable platform name' do
       expect(active_account.platform_name).to eq('Facebook')
+    end
+
+    it 'destroys dependent platform_campaigns when account is destroyed' do
+      campaign = Campaign.create!(
+        user: user,
+        name: 'Cascade Campaign',
+        objective: 'OUTCOME_LEADS',
+        budget: 500.0
+      )
+      PlatformCampaign.create!(
+        campaign: campaign,
+        platform_account: active_account,
+        sync_status: 'pending'
+      )
+
+      expect { active_account.destroy }.to change(PlatformCampaign, :count).by(-1)
     end
   end
 end
