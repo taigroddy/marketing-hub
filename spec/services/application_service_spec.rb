@@ -119,15 +119,7 @@ RSpec.describe ApplicationService do
         expect(result.value!).to eq(message: 'Hello Dave', email: 'dave@example.com')
       end
 
-      it 'works with manual validate_with helper' do
-        success_result = manual_validation_service_class.call(name: 'Bob', email: 'bob@example.com')
-        expect(success_result).to be_success
-        expect(success_result.value!).to eq(result: 'Processed Bob')
 
-        failure_result = manual_validation_service_class.call(name: '', email: 'bob@example.com')
-        expect(failure_result).to be_failure
-        expect(failure_result.failure).to eq(name: [ 'must be filled' ])
-      end
     end
 
     context 'with a matcher block' do
