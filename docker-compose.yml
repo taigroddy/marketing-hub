@@ -1,0 +1,113 @@
+services:
+  traefik:
+    image: traefik:v3
+    container_name: marketing_traefik
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./config/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+    networks:
+      - marketing-net
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: marketing_web
+    restart: unless-stopped
+    command: bin/rails server -b 0.0.0.0 -p 3000
+    volumes:
+      - .:/app
+      - bundle_data:/usr/local/bundle
+    environment:
+      RAILS_ENV: ${RAILS_ENV:-development}
+      PORT: 3000
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-marketing_hub_development}
+      DATABASE_URL: ${DATABASE_URL:-postgres://postgres:postgres@db:5432/marketing_hub_development}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/1}
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      FB_APP_ID: ${FB_APP_ID:-}
+      FB_APP_SECRET: ${FB_APP_SECRET:-}
+      FB_AUTHORIZE_REDIRECT_UI: ${FB_AUTHORIZE_REDIRECT_UI:-}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web.rule=Host(`marketing.localhost`)"
+      - "traefik.http.routers.web.entrypoints=web"
+      - "traefik.http.services.web.loadbalancer.server.port=3000"
+    networks:
+      - marketing-net
+
+  db:
+    image: postgres:16-alpine
+    container_name: marketing_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-marketing_hub_development}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-marketing_hub_development}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - marketing-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: marketing_redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - marketing-net
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: marketing_mailpit
+    restart: unless-stopped
+    expose:
+      - "1025"
+      - "8025"
+    volumes:
+      - mailpit_data:/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mailpit.rule=Host(`mailchimp.localhost`)"
+      - "traefik.http.routers.mailpit.entrypoints=web"
+      - "traefik.http.services.mailpit.loadbalancer.server.port=8025"
+    networks:
+      - marketing-net
+
+networks:
+  marketing-net:
+    name: marketing-net
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  mailpit_data:
+  bundle_data:

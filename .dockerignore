@@ -1,0 +1,14 @@
+.git
+.gitignore
+.superpowers
+docs
+log/*
+tmp/*
+!log/.keep
+!tmp/.keep
+storage/*
+!storage/.keep
+node_modules
+.env
+.env.*
+!.env.example
