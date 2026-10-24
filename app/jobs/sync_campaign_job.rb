@@ -25,24 +25,28 @@ class SyncCampaignJob < ApplicationJob
   def broadcast_updates(campaign)
     return unless campaign
 
+    reloaded_campaign = campaign.reload
+    connected_accounts = reloaded_campaign.user.platform_accounts.connected
+    ordered_platform_campaigns = reloaded_campaign.platform_campaigns.includes(:platform_account).order(created_at: :desc)
+
     Turbo::StreamsChannel.broadcast_replace_to(
-      "campaign_#{campaign.id}",
+      "campaign_#{reloaded_campaign.id}",
       target: "platform_accounts_section",
       partial: "campaigns/platform_accounts_section",
       locals: {
-        campaign: campaign.reload,
-        platform_accounts: campaign.user.platform_accounts,
-        platform_campaigns: campaign.platform_campaigns
+        campaign: reloaded_campaign,
+        platform_accounts: connected_accounts,
+        platform_campaigns: ordered_platform_campaigns
       }
     )
 
     Turbo::StreamsChannel.broadcast_replace_to(
-      "campaign_#{campaign.id}",
+      "campaign_#{reloaded_campaign.id}",
       target: "platform_campaigns_section",
       partial: "campaigns/platform_campaigns_section",
       locals: {
-        campaign: campaign.reload,
-        platform_campaigns: campaign.platform_campaigns
+        campaign: reloaded_campaign,
+        platform_campaigns: ordered_platform_campaigns
       }
     )
   end
