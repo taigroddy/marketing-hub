@@ -9,9 +9,7 @@ module Campaigns
     protected
 
     def validation(input)
-      normalized = input.respond_to?(:to_unsafe_h) ? input.to_unsafe_h : input.dup
-      normalized = normalized.deep_symbolize_keys if normalized.respond_to?(:deep_symbolize_keys)
-
+      normalized = input.dup.deep_symbolize_keys
       provided_user = normalized[:user] if normalized[:user].is_a?(User)
 
       if normalized[:campaign].is_a?(Hash)

@@ -10,17 +10,13 @@ module PlatformCampaigns
     protected
 
     def validation(input)
-      normalized = input.respond_to?(:to_unsafe_h) ? input.to_unsafe_h : input.dup
-      normalized = normalized.deep_symbolize_keys if normalized.respond_to?(:deep_symbolize_keys)
+      normalized = input.dup.deep_symbolize_keys
 
       campaign_id = normalized[:campaign_id] || normalized[:id]
       platform = normalized[:platform].to_s.downcase
 
       errors = {}
       errors[:campaign_id] = [ "must be filled" ] if campaign_id.blank?
-      if platform.blank? || !%w[facebook google].include?(platform)
-        errors[:platform] = [ "must be facebook or google" ]
-      end
 
       if errors.any?
         Failure(errors)

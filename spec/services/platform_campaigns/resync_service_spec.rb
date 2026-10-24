@@ -58,12 +58,6 @@ RSpec.describe PlatformCampaigns::ResyncService, type: :service do
       expect(result.failure[:campaign_id]).to be_present
     end
 
-    it 'fails validation when platform is unsupported' do
-      result = described_class.call(id: campaign.id, platform: 'unknown')
-      expect(result).to be_failure
-      expect(result.failure[:platform]).to include('must be facebook or google')
-    end
-
     it 'matches block matcher m.failure(:validation) when validation fails' do
       validation_triggered = false
       described_class.call(platform: 'facebook') do |m|

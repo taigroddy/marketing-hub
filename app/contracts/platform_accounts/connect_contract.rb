@@ -10,9 +10,5 @@ module PlatformAccounts
       optional(:account_id).maybe(:string)
       optional(:name).maybe(:string)
     end
-
-    rule(:platform) do
-      key.failure("must be facebook or google") unless %w[facebook google].include?(value)
-    end
   end
 end

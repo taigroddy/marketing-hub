@@ -69,7 +69,7 @@ RSpec.describe Campaigns::CreateService do
       end
 
       it 'handles nested params under campaign key' do
-        nested_params = ActionController::Parameters.new({ campaign: valid_params })
+        nested_params = { campaign: valid_params }
         result = described_class.call(nested_params)
 
         expect(result).to be_success

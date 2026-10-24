@@ -41,8 +41,8 @@ RSpec.describe Auth::RegisterService do
         expect(result.value![:user].email).to eq('spaced@example.com')
       end
 
-      it 'handles ActionController::Parameters input' do
-        params = ActionController::Parameters.new(valid_params)
+      it 'handles string-keyed hash from full_request_params' do
+        params = valid_params.stringify_keys
         result = described_class.call(params)
 
         expect(result).to be_success

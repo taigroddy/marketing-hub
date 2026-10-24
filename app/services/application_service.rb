@@ -15,33 +15,5 @@ class ApplicationService
         new.call(*args, **kwargs, &block)
       end
     end
-
-    def contract(klass = nil)
-      if klass
-        @contract = klass
-      else
-        @contract
-      end
-    end
-  end
-
-  def validate_with(contract_or_class, input)
-    contract = contract_or_class.is_a?(Class) ? contract_or_class.new : contract_or_class
-    normalized_input = input.respond_to?(:to_unsafe_h) ? input.to_unsafe_h : input
-    result = contract.call(normalized_input)
-
-    if result.success?
-      Success(result.to_h)
-    else
-      Failure(result.errors.to_h)
-    end
-  end
-
-  def validation(input)
-    if self.class.contract
-      validate_with(self.class.contract, input)
-    else
-      Success(input)
-    end
   end
 end

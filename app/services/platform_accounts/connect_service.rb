@@ -9,9 +9,7 @@ module PlatformAccounts
     protected
 
     def validation(input)
-      normalized = input.respond_to?(:to_unsafe_h) ? input.to_unsafe_h : input.dup
-      normalized = normalized.deep_symbolize_keys if normalized.respond_to?(:deep_symbolize_keys)
-
+      normalized = input.dup.deep_symbolize_keys
       provided_user = normalized[:user] if normalized[:user].is_a?(User)
 
       result = PlatformAccounts::ConnectContract.new.call(normalized)
@@ -32,21 +30,8 @@ module PlatformAccounts
     end
 
     def process(input)
-      platform = input[:platform].to_s.downcase
+      return Failure(error: "Google platform integration coming soon") if input[:platform].to_s.downcase == "google"
 
-      case platform
-      when "facebook"
-        connect_facebook(input)
-      when "google"
-        Failure(error: "Google platform integration coming soon")
-      else
-        Failure(error: "Unsupported platform: #{platform}")
-      end
-    end
-
-    private
-
-    def connect_facebook(input)
       user = input[:user]
       client = input[:client] || Clients::OAuth::FacebookClient.new
 

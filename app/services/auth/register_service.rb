@@ -2,8 +2,6 @@
 
 module Auth
   class RegisterService < ApplicationService
-    contract Auth::RegisterContract
-
     step :validation
     step :check_resource
     step :process
@@ -11,10 +9,15 @@ module Auth
     protected
 
     def validation(input)
-      normalized = input.respond_to?(:to_unsafe_h) ? input.to_unsafe_h : input.dup
-      normalized = normalized.symbolize_keys if normalized.respond_to?(:symbolize_keys)
+      normalized = input.dup.symbolize_keys
       normalized[:email] = normalized[:email].to_s.strip if normalized[:email].is_a?(String)
-      super(normalized)
+
+      result = Auth::RegisterContract.new.call(normalized)
+      if result.success?
+        Success(result.to_h)
+      else
+        Failure(result.errors.to_h)
+      end
     end
 
     def check_resource(input)

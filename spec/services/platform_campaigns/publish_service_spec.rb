@@ -58,16 +58,6 @@ RSpec.describe PlatformCampaigns::PublishService, type: :service do
       expect(result.failure[:campaign_id]).to be_present
     end
 
-    it 'fails validation when platform is unsupported' do
-      result = described_class.call(
-        id: campaign.id,
-        platform: 'unsupported_platform',
-        platform_account_ids: [ account_fb1.id ]
-      )
-      expect(result).to be_failure
-      expect(result.failure[:platform]).to include('must be facebook or google')
-    end
-
     it 'fails validation when platform_account_ids is empty' do
       result = described_class.call(
         id: campaign.id,
