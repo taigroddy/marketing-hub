@@ -40,6 +40,10 @@ module App
     config.generators.system_tests = nil
 
     # Active Record Encryption configuration
+    if Rails.env.production? && ENV["ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY"].blank?
+      raise "ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY must be configured in production"
+    end
+
     config.active_record.encryption.primary_key = ENV["ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY"] ||
       Rails.application.credentials.dig(:active_record_encryption, :primary_key) ||
       "DkB0j9W7Mq53V8RWpZIqfXz5yck16Ol4"
