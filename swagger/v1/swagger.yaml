@@ -1,0 +1,376 @@
+---
+openapi: 3.0.1
+info:
+  title: Marketing Hub API
+  version: v1
+  description: Omnichannel Marketing Hub REST API documentation for authentication,
+    ad campaigns, and platform integrations.
+paths:
+  "/api/v1/auth/register":
+    post:
+      summary: Register a new user
+      tags:
+      - Authentication
+      parameters: []
+      responses:
+        '201':
+          description: User registered successfully
+        '422':
+          description: Validation error
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: user@example.com
+                password:
+                  type: string
+                  example: Password123!
+                password_confirmation:
+                  type: string
+                  example: Password123!
+              required:
+              - email
+              - password
+              - password_confirmation
+  "/api/v1/auth/login":
+    post:
+      summary: Authenticate user and return JWT
+      tags:
+      - Authentication
+      parameters: []
+      responses:
+        '200':
+          description: Login successful
+        '401':
+          description: Invalid credentials
+        '403':
+          description: Unconfirmed email address
+        '422':
+          description: Validation error
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: login-user@example.com
+                password:
+                  type: string
+                  example: Password123!
+              required:
+              - email
+              - password
+  "/api/v1/auth/confirm/{token}":
+    get:
+      summary: Confirm user email address
+      tags:
+      - Authentication
+      parameters:
+      - name: token
+        in: path
+        description: Confirmation token sent via email
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Email confirmed successfully
+        '422':
+          description: Invalid or expired token
+  "/api/v1/auth/me":
+    get:
+      summary: Get current authenticated user profile
+      tags:
+      - Authentication
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Profile retrieved successfully
+        '401':
+          description: Unauthorized
+  "/api/v1/campaigns":
+    get:
+      summary: List campaigns for current user
+      tags:
+      - Campaigns
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Campaigns retrieved successfully
+        '401':
+          description: Unauthorized
+    post:
+      summary: Create a new campaign
+      tags:
+      - Campaigns
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '201':
+          description: Campaign created successfully
+        '401':
+          description: Unauthorized
+        '422':
+          description: Validation error
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Brand Awareness 2026
+                objective:
+                  type: string
+                  example: OUTCOME_AWARENESS
+                budget:
+                  type: number
+                  format: float
+                  example: 5000.0
+              required:
+              - name
+              - objective
+              - budget
+  "/api/v1/campaigns/{id}":
+    parameters:
+    - name: id
+      in: path
+      description: Campaign ID
+      required: true
+      schema:
+        type: integer
+    get:
+      summary: Get campaign details
+      tags:
+      - Campaigns
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Campaign details retrieved
+        '401':
+          description: Unauthorized
+        '404':
+          description: Campaign not found
+    patch:
+      summary: Update campaign budget
+      tags:
+      - Campaigns
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '200':
+          description: Campaign budget updated
+        '401':
+          description: Unauthorized
+        '404':
+          description: Campaign not found
+        '422':
+          description: Validation error
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                budget:
+                  type: number
+                  format: float
+                  example: 3500.0
+              required:
+              - budget
+  "/v1/{platform}/oauth/authorize":
+    get:
+      summary: Initiate OAuth authorization with advertising platform
+      tags:
+      - Platform Accounts
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: platform
+        in: path
+        type: string
+        schema:
+          type: string
+          enum:
+          - facebook
+          - google
+        description: Platform identifier (facebook or google)
+        required: true
+      - name: state
+        in: query
+        required: false
+        description: Anti-CSRF state token
+        schema:
+          type: string
+      - name: redirect_uri
+        in: query
+        required: false
+        description: Callback redirect URI
+        schema:
+          type: string
+      - name: scope
+        in: query
+        required: false
+        description: OAuth scope permissions
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OAuth authorization URL generated
+        '401':
+          description: Unauthorized
+        '501':
+          description: Platform integration coming soon
+  "/v1/{platform}/oauth/callback":
+    get:
+      summary: OAuth callback to exchange authorization code for access token
+      tags:
+      - Platform Accounts
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: platform
+        in: path
+        type: string
+        schema:
+          type: string
+          enum:
+          - facebook
+          - google
+        description: Platform identifier (facebook or google)
+        required: true
+      - name: code
+        in: query
+        required: true
+        description: OAuth authorization code
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Platform account connected successfully
+        '401':
+          description: Unauthorized
+        '422':
+          description: Validation or exchange error
+  "/api/v1/platform_accounts":
+    get:
+      summary: List connected platform accounts
+      tags:
+      - Platform Accounts
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: List of connected platform accounts
+  "/v1/{platform}/campaigns/{id}/publish":
+    parameters:
+    - name: platform
+      in: path
+      type: string
+      schema:
+        type: string
+        enum:
+        - facebook
+        - google
+      description: Advertising platform (facebook or google)
+      required: true
+    - name: id
+      in: path
+      description: Campaign ID
+      required: true
+      schema:
+        type: integer
+    post:
+      summary: Publish a campaign to one or more platform ad accounts
+      tags:
+      - Platform Campaigns
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '200':
+          description: Campaign publish initiated
+        '401':
+          description: Unauthorized
+        '422':
+          description: Validation error or already published
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                platform_account_ids:
+                  type: array
+                  items:
+                    type: integer
+                  example:
+                  - 1
+              required:
+              - platform_account_ids
+  "/v1/{platform}/campaigns/{id}/resync":
+    parameters:
+    - name: platform
+      in: path
+      type: string
+      schema:
+        type: string
+        enum:
+        - facebook
+        - google
+      description: Advertising platform (facebook or google)
+      required: true
+    - name: id
+      in: path
+      description: Campaign ID
+      required: true
+      schema:
+        type: integer
+    post:
+      summary: Resynchronize campaign details to platform ad accounts
+      tags:
+      - Platform Campaigns
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '200':
+          description: Campaign resync initiated
+        '422':
+          description: No drift detected or resync error
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                platform_campaign_id:
+                  type: integer
+                  example: 1
+servers:
+- url: http://{defaultHost}
+  description: Local development server
+  variables:
+    defaultHost:
+      default: marketing.localhost
+- url: http://localhost:3000
+  description: Direct Puma server
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 'Provide JWT token in Authorization header: Bearer <token>'

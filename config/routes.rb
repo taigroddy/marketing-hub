@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 Rails.application.routes.draw do
+  mount Rswag::Ui::Engine => "/api-docs"
+  mount Rswag::Api::Engine => "/api-docs"
   get "up" => "rails/health#show", as: :rails_health_check
 
   # HTML Web Authentication Routes
@@ -36,6 +38,7 @@ Rails.application.routes.draw do
         post :login
         get  "confirm_email/:token", action: :confirm_email, as: :confirm_email
         post "confirm_email/:token", action: :confirm_email
+        get  "confirm/:token",       action: :confirm_email, as: :confirm
         get  :me
       end
 
