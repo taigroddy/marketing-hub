@@ -8,7 +8,7 @@ module Api
       before_action :authenticate_user!, only: [ :me ]
 
       def register
-        Auth::RegisterService.call(params) do |m|
+        Auth::RegisterService.call(full_request_params) do |m|
           m.success do |data|
             render json: {
               message: "Registration successful. Please check your email to confirm your account.",
@@ -27,10 +27,12 @@ module Api
       end
 
       def login
-        Auth::LoginService.call(params) do |m|
+        params_with_device = full_request_params.merge(device_info: request.user_agent)
+        Auth::LoginService.call(params_with_device) do |m|
           m.success do |data|
             render json: {
               token: data[:token],
+              refresh_token: data[:refresh_token],
               user: UserBlueprint.render_as_hash(data[:user])
             }, status: :ok
           end
@@ -45,8 +47,45 @@ module Api
         end
       end
 
+      def refresh
+        params_with_device = full_request_params.merge(device_info: request.user_agent)
+        Auth::RefreshTokenService.call(params_with_device) do |m|
+          m.success do |data|
+            render json: {
+              token: data[:token],
+              refresh_token: data[:refresh_token],
+              user: UserBlueprint.render_as_hash(data[:user])
+            }, status: :ok
+          end
+
+          m.failure(:validation) do |errors|
+            render json: { errors: errors }, status: :unprocessable_entity
+          end
+
+          m.failure do |_error|
+            render json: { error: "Invalid or expired refresh token." }, status: :unauthorized
+          end
+        end
+      end
+
+      def logout
+        Auth::LogoutService.call(full_request_params) do |m|
+          m.success do |_data|
+            render json: { message: "Logged out successfully." }, status: :ok
+          end
+
+          m.failure(:validation) do |errors|
+            render json: { errors: errors }, status: :unprocessable_entity
+          end
+
+          m.failure do |_error|
+            render json: { error: "Invalid or expired refresh token." }, status: :unauthorized
+          end
+        end
+      end
+
       def confirm_email
-        Auth::ConfirmEmailService.call(params) do |m|
+        Auth::ConfirmEmailService.call(full_request_params) do |m|
           m.success do |data|
             render json: {
               token: data[:token],

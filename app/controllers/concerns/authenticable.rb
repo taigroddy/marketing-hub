@@ -6,7 +6,7 @@ module Authenticable
   extend ActiveSupport::Concern
 
   class << self
-    def encode_jwt(payload, exp = 24.hours.from_now)
+    def encode_jwt(payload, exp = 1.hour.from_now)
       payload_to_encode = payload.dup.stringify_keys
       payload_to_encode["exp"] = exp.to_i unless payload_to_encode.key?("exp")
       JWT.encode(payload_to_encode, jwt_secret_key, "HS256")
@@ -27,7 +27,7 @@ module Authenticable
   end
 
   class_methods do
-    def encode_jwt(payload, exp = 24.hours.from_now)
+    def encode_jwt(payload, exp = 1.hour.from_now)
       Authenticable.encode_jwt(payload, exp)
     end
 
@@ -41,10 +41,8 @@ module Authenticable
   end
 
   def authenticate_user!
-    token = extract_jwt_token
-    payload = decode_jwt(token)
-
-    if payload && (user = find_user_from_payload(payload))
+    user = resolve_user_from_token || attempt_cookie_refresh
+    if user
       Current.user = user
     else
       render_unauthorized
@@ -54,16 +52,12 @@ module Authenticable
   def current_user
     return Current.user if Current.user.present?
 
-    token = extract_jwt_token
-    payload = decode_jwt(token)
-    return nil if payload.blank?
-
-    user = find_user_from_payload(payload)
+    user = resolve_user_from_token || attempt_cookie_refresh
     Current.user = user if user.present?
     Current.user
   end
 
-  def encode_jwt(payload, exp = 24.hours.from_now)
+  def encode_jwt(payload, exp = 1.hour.from_now)
     Authenticable.encode_jwt(payload, exp)
   end
 
@@ -73,6 +67,81 @@ module Authenticable
 
   private
 
+  def cookie_store
+    if respond_to?(:cookies, true)
+      cookies
+    elsif respond_to?(:request) && request.respond_to?(:cookie_jar)
+      request.cookie_jar
+    end
+  end
+
+  def resolve_user_from_token
+    token = extract_jwt_token
+    return nil if token.blank?
+
+    payload = decode_jwt(token)
+    return nil if payload.blank?
+
+    if payload[:user_token_id].present? && defined?(UserToken) && UserToken.respond_to?(:find_by)
+      user_token = UserToken.find_by(id: payload[:user_token_id])
+      if user_token.nil? || user_token.revoked?
+        jar = cookie_store
+        if jar.present?
+          jar.delete(:jwt_token)
+          jar.delete(:refresh_token)
+        end
+        return nil
+      end
+    end
+
+    find_user_from_payload(payload)
+  end
+
+  def attempt_cookie_refresh
+    return nil if authorization_header_present?
+
+    jar = cookie_store
+    return nil if jar.blank?
+
+    refresh_token = jar[:refresh_token] || jar["refresh_token"]
+    if refresh_token.blank? && request.respond_to?(:cookies)
+      refresh_token = request.cookies["refresh_token"] || request.cookies[:refresh_token]
+    end
+    return nil if refresh_token.blank?
+
+    if defined?(Auth::RefreshTokenService)
+      result = Auth::RefreshTokenService.call(
+        refresh_token: refresh_token,
+        device_info: request.respond_to?(:user_agent) ? request.user_agent : nil
+      )
+
+      if result.success?
+        data = result.value!
+        jar[:jwt_token] = {
+          value: data[:token],
+          httponly: true,
+          same_site: :lax
+        }
+        jar[:refresh_token] = {
+          value: data[:refresh_token],
+          httponly: true,
+          same_site: :lax
+        }
+        return data[:user]
+      end
+    end
+
+    jar.delete(:jwt_token)
+    jar.delete(:refresh_token)
+    nil
+  end
+
+  def authorization_header_present?
+    return false unless respond_to?(:request) && request.respond_to?(:headers)
+
+    request.headers["Authorization"].present? || request.headers["HTTP_AUTHORIZATION"].present?
+  end
+
   def extract_jwt_token
     auth_header = request.headers["Authorization"].presence || request.headers["HTTP_AUTHORIZATION"].presence
     if auth_header.present?
@@ -80,8 +149,9 @@ module Authenticable
       return match[1].strip if match
     end
 
-    if respond_to?(:cookies) && (cookies[:jwt_token].present? || cookies["jwt_token"].present?)
-      cookies[:jwt_token] || cookies["jwt_token"]
+    jar = cookie_store
+    if jar.present? && (jar[:jwt_token].present? || jar["jwt_token"].present?)
+      jar[:jwt_token] || jar["jwt_token"]
     elsif request.respond_to?(:cookies)
       request.cookies["jwt_token"] || request.cookies[:jwt_token]
     end

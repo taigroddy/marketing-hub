@@ -38,6 +38,8 @@ Rails.application.routes.draw do
       namespace :auth do
         post :register
         post :login
+        post :refresh
+        post :logout
         get  "confirm_email/:token", action: :confirm_email, as: :confirm_email
         post "confirm_email/:token", action: :confirm_email
         get  "confirm/:token",       action: :confirm_email, as: :confirm

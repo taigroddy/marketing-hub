@@ -66,6 +66,54 @@ paths:
               required:
               - email
               - password
+  "/api/v1/auth/refresh":
+    post:
+      summary: Refresh access token using refresh token
+      tags:
+      - Authentication
+      parameters: []
+      responses:
+        '200':
+          description: Token refreshed successfully
+        '401':
+          description: Invalid or expired refresh token
+        '422':
+          description: Validation error
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+                  example: a1b2c3d4...
+              required:
+              - refresh_token
+  "/api/v1/auth/logout":
+    post:
+      summary: Revoke refresh token and logout device
+      tags:
+      - Authentication
+      parameters: []
+      responses:
+        '200':
+          description: Logged out successfully
+        '401':
+          description: Invalid or expired refresh token
+        '422':
+          description: Validation error
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+                  example: a1b2c3d4...
+              required:
+              - refresh_token
   "/api/v1/auth/confirm/{token}":
     get:
       summary: Confirm user email address

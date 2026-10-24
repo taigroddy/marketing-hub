@@ -2,19 +2,23 @@
 
 module Auth
   class LoginService < ApplicationService
-    contract Auth::LoginContract
-
     step :validation
     step :check_resource
     step :process
 
-    protected
+    private
 
     def validation(input)
-      normalized = input.respond_to?(:to_unsafe_h) ? input.to_unsafe_h : input.dup
-      normalized = normalized.symbolize_keys if normalized.respond_to?(:symbolize_keys)
-      normalized[:email] = normalized[:email].to_s.strip if normalized[:email].is_a?(String)
-      super(normalized)
+      email = input[:email] || input["email"]
+      cleaned = input.is_a?(Hash) ? input.symbolize_keys : {}
+      cleaned[:email] = email.to_s.strip if email.is_a?(String)
+
+      result = Auth::LoginContract.new.call(cleaned)
+      if result.success?
+        Success(result.to_h.merge(device_info: cleaned[:device_info]))
+      else
+        Failure(result.errors.to_h)
+      end
     end
 
     def check_resource(input)
@@ -26,14 +30,21 @@ module Auth
       elsif !user.confirmed?
         Failure(:unconfirmed_email)
       else
-        Success(user: user)
+        Success(input.merge(user: user))
       end
     end
 
     def process(input)
       user = input[:user]
-      token = Authenticable.encode_jwt({ user_id: user.id })
-      Success(user: user, token: token)
+      user_token, refresh_token = UserToken.create_for_user!(user, device_info: input[:device_info])
+      token = Authenticable.encode_jwt({ user_id: user.id, user_token_id: user_token.id }, 1.hour.from_now)
+
+      Success(
+        user: user,
+        user_token: user_token,
+        token: token,
+        refresh_token: refresh_token
+      )
     end
   end
 end

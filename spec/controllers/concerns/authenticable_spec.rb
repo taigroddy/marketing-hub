@@ -275,4 +275,112 @@ RSpec.describe Authenticable, type: :controller do
       end
     end
   end
+
+  describe 'cookie-based auto-refresh and token revocation' do
+    include ActiveSupport::Testing::TimeHelpers
+
+    let!(:db_user) do
+      User.create!(
+        email: 'authenticable_real@example.com',
+        password: 'Password123!',
+        confirmed_at: 1.day.ago
+      )
+    end
+    let!(:token_pair) { UserToken.create_for_user!(db_user, device_info: 'Browser Web') }
+    let(:user_token) { token_pair.first }
+    let(:raw_refresh_token) { token_pair.last }
+
+    context 'when access token is expired but refresh token cookie is valid' do
+      it 'auto-refreshes access token and rewrites cookies' do
+        expired_jwt = Authenticable.encode_jwt({ user_id: db_user.id, user_token_id: user_token.id }, 10.minutes.ago)
+        cookies[:jwt_token] = expired_jwt
+        cookies[:refresh_token] = raw_refresh_token
+
+        get :protected_action
+
+        expect(response).to have_http_status(:ok)
+        json = JSON.parse(response.body)
+        expect(json['current_user_id']).to eq(db_user.id)
+        expect(cookies[:jwt_token]).to be_present
+        expect(cookies[:jwt_token]).not_to eq(expired_jwt)
+        expect(cookies[:refresh_token]).to be_present
+        expect(cookies[:refresh_token]).not_to eq(raw_refresh_token)
+
+        new_decoded = Authenticable.decode_jwt(cookies[:jwt_token])
+        expect(new_decoded[:user_id]).to eq(db_user.id)
+        expect(new_decoded[:user_token_id]).to eq(user_token.id)
+      end
+    end
+
+    context 'when access token cookie is missing but refresh token cookie is valid' do
+      it 'issues a new access token and authenticates the request' do
+        cookies[:refresh_token] = raw_refresh_token
+
+        get :protected_action
+
+        expect(response).to have_http_status(:ok)
+        json = JSON.parse(response.body)
+        expect(json['current_user_id']).to eq(db_user.id)
+        expect(cookies[:jwt_token]).to be_present
+      end
+    end
+
+    context 'when refresh token is revoked' do
+      it 'clears cookies and renders unauthorized' do
+        user_token.revoke!
+        cookies[:jwt_token] = Authenticable.encode_jwt({ user_id: db_user.id, user_token_id: user_token.id }, 10.minutes.ago)
+        cookies[:refresh_token] = raw_refresh_token
+
+        get :protected_action
+
+        expect(response).to have_http_status(:unauthorized)
+        expect(cookies[:jwt_token]).to be_blank
+        expect(cookies[:refresh_token]).to be_blank
+        expect(Current.user).to be_nil
+      end
+    end
+
+    context 'when refresh token is expired' do
+      it 'clears cookies and renders unauthorized' do
+        travel_to 31.days.from_now do
+          cookies[:jwt_token] = Authenticable.encode_jwt({ user_id: db_user.id, user_token_id: user_token.id }, 10.minutes.ago)
+          cookies[:refresh_token] = raw_refresh_token
+
+          get :protected_action
+
+          expect(response).to have_http_status(:unauthorized)
+          expect(cookies[:jwt_token]).to be_blank
+          expect(cookies[:refresh_token]).to be_blank
+          expect(Current.user).to be_nil
+        end
+      end
+    end
+
+    context 'when access token has a revoked user_token_id' do
+      it 'rejects access and cleans up cookies' do
+        user_token.revoke!
+        valid_jwt = Authenticable.encode_jwt({ user_id: db_user.id, user_token_id: user_token.id })
+        cookies[:jwt_token] = valid_jwt
+        cookies[:refresh_token] = raw_refresh_token
+
+        get :protected_action
+
+        expect(response).to have_http_status(:unauthorized)
+        expect(cookies[:jwt_token]).to be_blank
+        expect(cookies[:refresh_token]).to be_blank
+      end
+    end
+
+    context 'when Authorization header is expired and cookies are present' do
+      it 'does not auto-refresh cookies and rejects request' do
+        expired_jwt = Authenticable.encode_jwt({ user_id: db_user.id }, 10.minutes.ago)
+        request.headers['Authorization'] = "Bearer #{expired_jwt}"
+        cookies[:refresh_token] = raw_refresh_token
+
+        get :protected_action
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+  end
 end

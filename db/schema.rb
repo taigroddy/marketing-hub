@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_24_080000) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_24_090500) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -22,8 +22,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_24_080000) do
     t.string "status", default: "draft", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["user_id", "created_at"], name: "index_campaigns_on_user_id_and_created_at"
-    t.index ["user_id"], name: "index_campaigns_on_user_id"
+    t.index [ "user_id", "created_at" ], name: "index_campaigns_on_user_id_and_created_at"
+    t.index [ "user_id" ], name: "index_campaigns_on_user_id"
   end
 
   create_table "platform_accounts", force: :cascade do |t|
@@ -38,9 +38,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_24_080000) do
     t.string "status", default: "connected", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["type"], name: "index_platform_accounts_on_type"
-    t.index ["user_id", "type", "account_id"], name: "index_platform_accounts_on_user_id_and_type_and_account_id", unique: true
-    t.index ["user_id"], name: "index_platform_accounts_on_user_id"
+    t.index [ "type" ], name: "index_platform_accounts_on_type"
+    t.index [ "user_id", "type", "account_id" ], name: "index_platform_accounts_on_user_id_and_type_and_account_id", unique: true
+    t.index [ "user_id" ], name: "index_platform_accounts_on_user_id"
   end
 
   create_table "platform_campaigns", force: :cascade do |t|
@@ -52,10 +52,22 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_24_080000) do
     t.text "last_error_message"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["campaign_id", "platform_account_id"], name: "idx_on_campaign_id_platform_account_id_878baa76ee", unique: true
-    t.index ["campaign_id"], name: "index_platform_campaigns_on_campaign_id"
-    t.index ["external_campaign_id"], name: "index_platform_campaigns_on_external_campaign_id"
-    t.index ["platform_account_id"], name: "index_platform_campaigns_on_platform_account_id"
+    t.index [ "campaign_id", "platform_account_id" ], name: "idx_on_campaign_id_platform_account_id_878baa76ee", unique: true
+    t.index [ "campaign_id" ], name: "index_platform_campaigns_on_campaign_id"
+    t.index [ "external_campaign_id" ], name: "index_platform_campaigns_on_external_campaign_id"
+    t.index [ "platform_account_id" ], name: "index_platform_campaigns_on_platform_account_id"
+  end
+
+  create_table "user_tokens", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "token_digest", null: false
+    t.string "device_info"
+    t.datetime "expires_at", null: false
+    t.datetime "revoked_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "token_digest" ], name: "index_user_tokens_on_token_digest", unique: true
+    t.index [ "user_id" ], name: "index_user_tokens_on_user_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -66,12 +78,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_24_080000) do
     t.datetime "confirmation_sent_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
-    t.index ["email"], name: "index_users_on_email", unique: true
+    t.index [ "confirmation_token" ], name: "index_users_on_confirmation_token", unique: true
+    t.index [ "email" ], name: "index_users_on_email", unique: true
   end
 
   add_foreign_key "campaigns", "users"
   add_foreign_key "platform_accounts", "users"
   add_foreign_key "platform_campaigns", "campaigns"
   add_foreign_key "platform_campaigns", "platform_accounts"
+  add_foreign_key "user_tokens", "users"
 end
