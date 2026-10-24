@@ -58,6 +58,8 @@ class CampaignsController < ApplicationController
 
       m.failure(:validation) do |errors|
         @campaign = Current.user.campaigns.find_by(id: params[:id])
+        return redirect_to dashboard_path, alert: "Campaign not found." if @campaign.nil?
+
         @errors = errors
         flash.now[:alert] = "Please fix the errors below."
         render :edit, status: :unprocessable_entity
