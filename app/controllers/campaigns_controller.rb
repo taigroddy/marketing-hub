@@ -10,6 +10,9 @@ class CampaignsController < ApplicationController
   def show
     @campaign = Current.user.campaigns.find_by(id: params[:id])
     if @campaign
+      @platform_accounts = Current.user.platform_accounts.connected
+      @platform_campaigns = @campaign.platform_campaigns.includes(:platform_account).order(created_at: :desc)
+      @published_account_ids = @campaign.platform_campaigns.pluck(:platform_account_id)
       render :show
     else
       redirect_to dashboard_path, alert: "Campaign not found"

@@ -24,6 +24,8 @@ Rails.application.routes.draw do
     get  "oauth/authorize" => "api/v1/platform_accounts#authorize", as: :platform_oauth_authorize
     get  "oauth/callback"  => "api/v1/platform_accounts#callback",  as: :platform_oauth_callback
     post "oauth/callback"  => "api/v1/platform_accounts#callback"
+    post "campaigns/:id/publish" => "api/v1/platform_campaigns#publish", as: :platform_campaign_publish
+    post "campaigns/:id/resync"  => "api/v1/platform_campaigns#resync",  as: :platform_campaign_resync
   end
 
   # API v1 Authentication Routes
@@ -44,6 +46,8 @@ Rails.application.routes.draw do
         get  "oauth/authorize" => "platform_accounts#authorize"
         get  "oauth/callback"  => "platform_accounts#callback"
         post "oauth/callback"  => "platform_accounts#callback"
+        post "campaigns/:id/publish" => "platform_campaigns#publish"
+        post "campaigns/:id/resync"  => "platform_campaigns#resync"
       end
     end
   end

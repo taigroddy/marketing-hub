@@ -2,6 +2,8 @@
 
 class PlatformAccount < ApplicationRecord
   belongs_to :user
+  has_many :platform_campaigns, dependent: :destroy
+  has_many :campaigns, through: :platform_campaigns
 
   encrypts :access_token
   encrypts :refresh_token

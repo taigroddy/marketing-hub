@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_24_073500) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_24_080000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -43,6 +43,21 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_24_073500) do
     t.index ["user_id"], name: "index_platform_accounts_on_user_id"
   end
 
+  create_table "platform_campaigns", force: :cascade do |t|
+    t.bigint "campaign_id", null: false
+    t.bigint "platform_account_id", null: false
+    t.string "external_campaign_id"
+    t.datetime "synced_at"
+    t.string "sync_status", default: "pending", null: false
+    t.text "last_error_message"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["campaign_id", "platform_account_id"], name: "idx_on_campaign_id_platform_account_id_878baa76ee", unique: true
+    t.index ["campaign_id"], name: "index_platform_campaigns_on_campaign_id"
+    t.index ["external_campaign_id"], name: "index_platform_campaigns_on_external_campaign_id"
+    t.index ["platform_account_id"], name: "index_platform_campaigns_on_platform_account_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "email", null: false
     t.string "password_digest", null: false
@@ -57,4 +72,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_24_073500) do
 
   add_foreign_key "campaigns", "users"
   add_foreign_key "platform_accounts", "users"
+  add_foreign_key "platform_campaigns", "campaigns"
+  add_foreign_key "platform_campaigns", "platform_accounts"
 end

@@ -1,4 +1,5 @@
-<div class="max-w-4xl mx-auto py-8">
+<div class="max-w-5xl mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-8">
+  <!-- Section 1: Campaign Basic Info & Header -->
   <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
     <div class="flex items-center justify-between pb-6 border-b border-gray-100">
       <div>
@@ -13,13 +14,12 @@
       <div class="flex items-center space-x-3">
         <%= link_to "Dashboard", dashboard_path,
               class: "px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors" %>
-        <%= link_to "Sửa budget", edit_campaign_path(@campaign),
+        <%= link_to "Chỉnh sửa", edit_campaign_path(@campaign),
               class: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors" %>
       </div>
     </div>
 
-    <!-- Section 1: Campaign Basic Info -->
-    <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-4 gap-6">
       <div class="p-6 bg-gray-50 rounded-lg border border-gray-200">
         <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Mục tiêu</h3>
         <p class="mt-2 text-lg font-bold text-gray-900"><%= @campaign.objective %></p>
@@ -31,9 +31,142 @@
       </div>
 
       <div class="p-6 bg-gray-50 rounded-lg border border-gray-200">
-        <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Ngày tạo</h3>
-        <p class="mt-2 text-sm font-medium text-gray-700"><%= @campaign.created_at.strftime("%d/%m/%Y %H:%M") %></p>
+        <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Trạng thái</h3>
+        <p class="mt-2 text-lg font-bold text-gray-900"><%= @campaign.status.capitalize %></p>
+      </div>
+
+      <div class="p-6 bg-gray-50 rounded-lg border border-gray-200">
+        <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Ngày cập nhật</h3>
+        <p class="mt-2 text-sm font-medium text-gray-700"><%= @campaign.updated_at.strftime("%d/%m/%Y %H:%M") %></p>
       </div>
     </div>
+  </div>
+
+  <!-- Section 2: Connected Platform Accounts for Publishing -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+    <div class="pb-4 border-b border-gray-100">
+      <h2 class="text-lg font-bold text-gray-900">Nền tảng liên kết</h2>
+      <p class="text-sm text-gray-500 mt-1">Chọn tài khoản quảng cáo đã kết nối để xuất bản và đồng bộ chiến dịch.</p>
+    </div>
+
+    <% if @platform_accounts.blank? %>
+      <div class="mt-6 text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+        <p class="text-gray-500 text-sm">Bạn chưa kết nối tài khoản quảng cáo nào.</p>
+        <%= link_to "Kết nối tài khoản tại Dashboard", dashboard_path, class: "mt-2 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
+      </div>
+    <% else %>
+      <%= form_with url: "/v1/facebook/campaigns/#{@campaign.id}/publish", method: :post, local: true, class: "mt-6 space-y-4" do |f| %>
+        <div class="divide-y divide-gray-100 border border-gray-200 rounded-lg overflow-hidden">
+          <% @platform_accounts.each do |account| %>
+            <% already_published = @published_account_ids.include?(account.id) %>
+            <label class="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors <%= 'bg-gray-50 opacity-75 cursor-not-allowed' if already_published %>">
+              <div class="flex items-center space-x-3">
+                <input type="checkbox"
+                       name="platform_account_ids[]"
+                       value="<%= account.id %>"
+                       <%= "disabled" if already_published %>
+                       class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 <%= 'cursor-not-allowed' if already_published %>">
+                <div>
+                  <span class="text-sm font-medium text-gray-900"><%= account.name.presence || account.account_id %></span>
+                  <span class="ml-2 text-xs text-gray-500">(<%= account.platform_name %> - ID: <%= account.account_id %>)</span>
+                </div>
+              </div>
+
+              <% if already_published %>
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-700">
+                  Đã xuất bản
+                </span>
+              <% else %>
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                  Sẵn sàng đồng bộ
+                </span>
+              <% end %>
+            </label>
+          <% end %>
+        </div>
+
+        <div class="pt-4 flex justify-end">
+          <button type="submit"
+                  class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-lg shadow-sm transition-colors flex items-center space-x-2">
+            <span>Sync to platform</span>
+          </button>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+
+  <!-- Section 3: Linked Platform Campaigns -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+    <div class="pb-4 border-b border-gray-100">
+      <h2 class="text-lg font-bold text-gray-900">Chiến dịch đã đồng bộ</h2>
+      <p class="text-sm text-gray-500 mt-1">Danh sách liên kết chiến dịch trên các nền tảng và tình trạng đồng bộ.</p>
+    </div>
+
+    <% if @platform_campaigns.blank? %>
+      <div class="mt-6 text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+        <p class="text-gray-500 text-sm">Chiến dịch này chưa được liên kết hoặc đồng bộ tới nền tảng nào.</p>
+      </div>
+    <% else %>
+      <div class="mt-6 overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nền tảng & Tài khoản</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">External ID</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đồng bộ lúc</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
+              <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <% @platform_campaigns.each do |pc| %>
+              <% has_drift = pc.out_of_sync? %>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm font-medium text-gray-900"><%= pc.platform_account.name.presence || pc.platform_account.account_id %></div>
+                  <div class="text-xs text-gray-500"><%= pc.platform_account.platform_name %></div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-700">
+                  <%= pc.external_campaign_id.presence || "-" %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <%= pc.synced_at ? pc.synced_at.strftime("%d/%m/%Y %H:%M:%S") : "Chưa có" %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center space-x-2">
+                    <% if has_drift %>
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300">
+                        Sai lệch
+                      </span>
+                    <% elsif pc.sync_status == "synced" %>
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Đã đồng bộ
+                      </span>
+                    <% elsif pc.sync_status == "failed" %>
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800" title="<%= pc.last_error_message %>">
+                        Thất bại
+                      </span>
+                    <% else %>
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        Đang chờ
+                      </span>
+                    <% end %>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <% if has_drift %>
+                    <%= button_to "Re-sync",
+                          "/v1/#{pc.platform_account.platform_name.downcase}/campaigns/#{@campaign.id}/resync",
+                          method: :post,
+                          params: { platform_campaign_id: pc.id },
+                          class: "inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-amber-600 hover:bg-amber-700 transition" %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
   </div>
 </div>

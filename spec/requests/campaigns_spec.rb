@@ -72,13 +72,77 @@ RSpec.describe 'Campaigns Web UI', type: :request do
 
   describe 'GET /campaigns/:id' do
     context 'when owner' do
-      it 'renders campaign details' do
+      let!(:fb_account_1) do
+        PlatformAccount::Facebook.create!(
+          user: user_a,
+          account_id: 'act_ui_111',
+          name: 'FB Store UI 1',
+          access_token: 'token_ui_1',
+          status: 'connected'
+        )
+      end
+
+      let!(:fb_account_2) do
+        PlatformAccount::Facebook.create!(
+          user: user_a,
+          account_id: 'act_ui_222',
+          name: 'FB Store UI 2',
+          access_token: 'token_ui_2',
+          status: 'connected'
+        )
+      end
+
+      it 'renders Section 1 with campaign details and edit button' do
         cookies[:jwt_token] = token_a
         get "/campaigns/#{campaign_a.id}"
 
         expect(response).to have_http_status(:ok)
         expect(response.body).to include('User A Web Campaign')
+        expect(response.body).to include('OUTCOME_TRAFFIC')
         expect(response.body).to include('1500.00')
+        expect(response.body).to include('Chỉnh sửa')
+        expect(response.body).to include("/campaigns/#{campaign_a.id}/edit")
+      end
+
+      it 'renders Section 2 with connected accounts, checkboxes, and disables already published accounts' do
+        PlatformCampaign.create!(
+          campaign: campaign_a,
+          platform_account: fb_account_1,
+          sync_status: 'synced',
+          external_campaign_id: 'fb_ext_ui_1',
+          synced_at: 1.hour.ago
+        )
+
+        cookies[:jwt_token] = token_a
+        get "/campaigns/#{campaign_a.id}"
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include('FB Store UI 1')
+        expect(response.body).to include('FB Store UI 2')
+        expect(response.body).to include('Sync to platform')
+        expect(response.body).to include('disabled')
+        expect(response.body).to include('Đã xuất bản')
+        expect(response.body).to include('Sẵn sàng đồng bộ')
+      end
+
+      it 'renders Section 3 with linked campaigns, shows "Sai lệch" badge and "Re-sync" button on drift' do
+        pc = PlatformCampaign.create!(
+          campaign: campaign_a,
+          platform_account: fb_account_1,
+          sync_status: 'synced',
+          external_campaign_id: 'fb_ext_drift_007',
+          synced_at: 2.hours.ago
+        )
+        campaign_a.update_columns(updated_at: 10.minutes.ago)
+
+        cookies[:jwt_token] = token_a
+        get "/campaigns/#{campaign_a.id}"
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include('fb_ext_drift_007')
+        expect(response.body).to include('Sai lệch')
+        expect(response.body).to include('Re-sync')
+        expect(response.body).to include("/v1/facebook/campaigns/#{campaign_a.id}/resync")
       end
     end
 
