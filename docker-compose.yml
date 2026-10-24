@@ -35,7 +35,8 @@ services:
       SMTP_PORT: ${SMTP_PORT:-1025}
       FB_APP_ID: ${FB_APP_ID:-}
       FB_APP_SECRET: ${FB_APP_SECRET:-}
-      FB_AUTHORIZE_REDIRECT_UI: ${FB_AUTHORIZE_REDIRECT_UI:-}
+      FB_AUTHORIZE_REDIRECT_URI: ${FB_AUTHORIZE_REDIRECT_URI:-${FB_AUTHORIZE_REDIRECT_UI:-http://marketing.localhost/oauth/facebook/callback}}
+      FB_AUTHORIZE_REDIRECT_UI: ${FB_AUTHORIZE_REDIRECT_UI:-${FB_AUTHORIZE_REDIRECT_URI:-http://marketing.localhost/oauth/facebook/callback}}
     depends_on:
       db:
         condition: service_healthy
