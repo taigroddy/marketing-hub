@@ -102,6 +102,8 @@ RSpec.describe 'Campaigns Web UI', type: :request do
         expect(response.body).to include('1500.00')
         expect(response.body).to include('Chỉnh sửa')
         expect(response.body).to include("/campaigns/#{campaign_a.id}/edit")
+        expect(response.body).to include('turbo-cable-stream-source')
+        expect(response.body).to include('Turbo::StreamsChannel')
       end
 
       it 'renders Section 2 with connected accounts, checkboxes, and disables already published accounts' do
@@ -117,6 +119,7 @@ RSpec.describe 'Campaigns Web UI', type: :request do
         get "/campaigns/#{campaign_a.id}"
 
         expect(response).to have_http_status(:ok)
+        expect(response.body).to include('id="platform_accounts_section"')
         expect(response.body).to include('FB Store UI 1')
         expect(response.body).to include('FB Store UI 2')
         expect(response.body).to include('Sync to platform')
@@ -139,6 +142,7 @@ RSpec.describe 'Campaigns Web UI', type: :request do
         get "/campaigns/#{campaign_a.id}"
 
         expect(response).to have_http_status(:ok)
+        expect(response.body).to include('id="platform_campaigns_section"')
         expect(response.body).to include('fb_ext_drift_007')
         expect(response.body).to include('Sai lệch')
         expect(response.body).to include('Re-sync')

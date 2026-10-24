@@ -10,13 +10,42 @@ class SyncCampaignJob < ApplicationJob
     campaign = platform_campaign.campaign
     account = platform_campaign.platform_account
 
-    result = sync_with_platform(platform_campaign, campaign, account)
-    persist_sync_result(platform_campaign, result)
-  rescue StandardError => e
-    persist_error_result(platform_campaign, e.message)
+    begin
+      result = sync_with_platform(platform_campaign, campaign, account)
+      persist_sync_result(platform_campaign, result)
+    rescue StandardError => e
+      persist_error_result(platform_campaign, e.message)
+    ensure
+      broadcast_updates(campaign)
+    end
   end
 
   private
+
+  def broadcast_updates(campaign)
+    return unless campaign
+
+    Turbo::StreamsChannel.broadcast_replace_to(
+      "campaign_#{campaign.id}",
+      target: "platform_accounts_section",
+      partial: "campaigns/platform_accounts_section",
+      locals: {
+        campaign: campaign.reload,
+        platform_accounts: campaign.user.platform_accounts,
+        platform_campaigns: campaign.platform_campaigns
+      }
+    )
+
+    Turbo::StreamsChannel.broadcast_replace_to(
+      "campaign_#{campaign.id}",
+      target: "platform_campaigns_section",
+      partial: "campaigns/platform_campaigns_section",
+      locals: {
+        campaign: campaign.reload,
+        platform_campaigns: campaign.platform_campaigns
+      }
+    )
+  end
 
   def sync_with_platform(platform_campaign, campaign, account)
     if inside_db_transaction?

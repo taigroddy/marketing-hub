@@ -193,5 +193,100 @@ RSpec.describe SyncCampaignJob, type: :job do
         expect(google_platform_campaign.last_error_message).to include('Google platform integration coming soon')
       end
     end
+
+    context 'Turbo Stream broadcasts' do
+      before do
+        allow(mock_facebook_client).to receive(:create_campaign).and_return(
+          Dry::Monads::Success(id: 'fb_ext_12345')
+        )
+      end
+
+      it 'broadcasts replacement for platform_accounts_section and platform_campaigns_section on success' do
+        expect(Turbo::StreamsChannel).to receive(:broadcast_replace_to).with(
+          "campaign_#{campaign.id}",
+          target: 'platform_accounts_section',
+          partial: 'campaigns/platform_accounts_section',
+          locals: {
+            campaign: campaign,
+            platform_accounts: campaign.user.platform_accounts,
+            platform_campaigns: campaign.platform_campaigns
+          }
+        )
+
+        expect(Turbo::StreamsChannel).to receive(:broadcast_replace_to).with(
+          "campaign_#{campaign.id}",
+          target: 'platform_campaigns_section',
+          partial: 'campaigns/platform_campaigns_section',
+          locals: {
+            campaign: campaign,
+            platform_campaigns: campaign.platform_campaigns
+          }
+        )
+
+        described_class.perform_now(platform_campaign.id)
+      end
+
+      it 'broadcasts replacement when adapter returns failure' do
+        allow(mock_facebook_client).to receive(:create_campaign).and_return(
+          Dry::Monads::Failure(error: 'API rate limit')
+        )
+
+        expect(Turbo::StreamsChannel).to receive(:broadcast_replace_to).with(
+          "campaign_#{campaign.id}",
+          target: 'platform_accounts_section',
+          partial: 'campaigns/platform_accounts_section',
+          locals: hash_including(campaign: an_instance_of(Campaign))
+        )
+
+        expect(Turbo::StreamsChannel).to receive(:broadcast_replace_to).with(
+          "campaign_#{campaign.id}",
+          target: 'platform_campaigns_section',
+          partial: 'campaigns/platform_campaigns_section',
+          locals: hash_including(campaign: an_instance_of(Campaign))
+        )
+
+        described_class.perform_now(platform_campaign.id)
+      end
+
+      it 'broadcasts replacement when an unexpected error is raised' do
+        allow(mock_facebook_client).to receive(:create_campaign).and_raise(
+          Net::OpenTimeout, 'Connection timed out'
+        )
+
+        expect(Turbo::StreamsChannel).to receive(:broadcast_replace_to).with(
+          "campaign_#{campaign.id}",
+          target: 'platform_accounts_section',
+          partial: 'campaigns/platform_accounts_section',
+          locals: hash_including(campaign: an_instance_of(Campaign))
+        )
+
+        expect(Turbo::StreamsChannel).to receive(:broadcast_replace_to).with(
+          "campaign_#{campaign.id}",
+          target: 'platform_campaigns_section',
+          partial: 'campaigns/platform_campaigns_section',
+          locals: hash_including(campaign: an_instance_of(Campaign))
+        )
+
+        described_class.perform_now(platform_campaign.id)
+      end
+
+      it 'does not broadcast when platform_campaign is not found' do
+        expect(Turbo::StreamsChannel).not_to receive(:broadcast_replace_to)
+
+        described_class.perform_now(999_999)
+      end
+
+      it 'renders both partials and publishes turbo stream messages to ActionCable stream' do
+        expect do
+          described_class.perform_now(platform_campaign.id)
+        end.to change {
+          ActionCable.server.pubsub.broadcasts("campaign_#{campaign.id}").size
+        }.by(2)
+
+        messages = ActionCable.server.pubsub.broadcasts("campaign_#{campaign.id}")
+        expect(messages[0]).to include('target=\"platform_accounts_section\"')
+        expect(messages[1]).to include('target=\"platform_campaigns_section\"')
+      end
+    end
   end
 end
