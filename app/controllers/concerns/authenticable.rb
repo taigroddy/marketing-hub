@@ -87,8 +87,8 @@ module Authenticable
       if user_token.nil? || user_token.revoked?
         jar = cookie_store
         if jar.present?
-          jar.delete(:jwt_token)
-          jar.delete(:refresh_token)
+          jar.delete(:jwt_token, secure: Rails.env.production?, same_site: :lax)
+          jar.delete(:refresh_token, secure: Rails.env.production?, same_site: :lax)
         end
         return nil
       end
@@ -120,19 +120,23 @@ module Authenticable
         jar[:jwt_token] = {
           value: data[:token],
           httponly: true,
-          same_site: :lax
+          secure: Rails.env.production?,
+          same_site: :lax,
+          expires: 1.hour.from_now
         }
         jar[:refresh_token] = {
           value: data[:refresh_token],
           httponly: true,
-          same_site: :lax
+          secure: Rails.env.production?,
+          same_site: :lax,
+          expires: 30.days.from_now
         }
         return data[:user]
       end
     end
 
-    jar.delete(:jwt_token)
-    jar.delete(:refresh_token)
+    jar.delete(:jwt_token, secure: Rails.env.production?, same_site: :lax)
+    jar.delete(:refresh_token, secure: Rails.env.production?, same_site: :lax)
     nil
   end
 

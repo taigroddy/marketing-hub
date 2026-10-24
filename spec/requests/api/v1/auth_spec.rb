@@ -408,5 +408,31 @@ RSpec.describe "Api::V1::Auth", type: :request do
            as: :json
       expect(response).to have_http_status(:ok)
     end
+
+    it "safely truncates User-Agent headers longer than 255 characters on login and refresh" do
+      long_ua = "Specialized-Agent/2.0 " + ("K" * 320)
+
+      post "/api/v1/auth/login",
+           params: { email: user.email, password: "Password123!" },
+           headers: { "User-Agent" => long_ua },
+           as: :json
+      expect(response).to have_http_status(:ok)
+      data = JSON.parse(response.body)
+
+      decoded = Authenticable.decode_jwt(data["token"])
+      token_record = UserToken.find(decoded[:user_token_id])
+      expect(token_record.device_info.length).to eq(255)
+      expect(token_record.device_info).to eq(long_ua[0, 255])
+
+      longer_refresh_ua = "Refreshed-Agent/3.0 " + ("M" * 320)
+      post "/api/v1/auth/refresh",
+           params: { refresh_token: data["refresh_token"] },
+           headers: { "User-Agent" => longer_refresh_ua },
+           as: :json
+      expect(response).to have_http_status(:ok)
+      token_record.reload
+      expect(token_record.device_info.length).to eq(255)
+      expect(token_record.device_info).to eq(longer_refresh_ua[0, 255])
+    end
   end
 end

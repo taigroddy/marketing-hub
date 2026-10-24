@@ -32,6 +32,15 @@ RSpec.describe UserToken, type: :model do
       expect(token.revoked_at).to be_nil
       expect(token.active?).to be true
     end
+
+    it 'truncates device_info exceeding 255 characters without database error' do
+      long_device_info = 'Mozilla/5.0 ' + ('x' * 300)
+      token, = described_class.create_for_user!(user, device_info: long_device_info)
+
+      expect(token).to be_persisted
+      expect(token.device_info.length).to eq(255)
+      expect(token.device_info).to eq(long_device_info[0, 255])
+    end
   end
 
   describe '.digest' do
@@ -91,6 +100,14 @@ RSpec.describe UserToken, type: :model do
         expect(token.expires_at).to be > old_expires_at
         expect(token.active?).to be true
       end
+    end
+
+    it 'truncates new_device_info exceeding 255 characters on rotation' do
+      long_device_info = 'Opera/9.80 ' + ('y' * 300)
+      token.rotate!(new_device_info: long_device_info)
+
+      expect(token.device_info.length).to eq(255)
+      expect(token.device_info).to eq(long_device_info[0, 255])
     end
   end
 

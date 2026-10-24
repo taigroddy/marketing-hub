@@ -4,7 +4,11 @@ require "digest"
 require "securerandom"
 
 class UserToken < ApplicationRecord
+  MAX_DEVICE_INFO_LENGTH = 255
+
   belongs_to :user
+
+  before_validation :truncate_device_info
 
   scope :active, -> { where(revoked_at: nil).where("expires_at > ?", Time.current) }
 
@@ -30,7 +34,7 @@ class UserToken < ApplicationRecord
       token_digest: self.class.digest(new_raw_token),
       expires_at: 30.days.from_now
     }
-    attrs[:device_info] = new_device_info if new_device_info.present?
+    attrs[:device_info] = self.class.sanitize_device_info(new_device_info) if new_device_info.present?
     update!(attrs)
     new_raw_token
   end
@@ -44,15 +48,25 @@ class UserToken < ApplicationRecord
       SecureRandom.hex(32)
     end
 
+    def sanitize_device_info(info)
+      info.to_s[0, MAX_DEVICE_INFO_LENGTH] if info.present?
+    end
+
     def create_for_user!(user, device_info: nil)
       raw_token = generate_token
       record = create!(
         user: user,
         token_digest: digest(raw_token),
-        device_info: device_info,
+        device_info: sanitize_device_info(device_info),
         expires_at: 30.days.from_now
       )
       [ record, raw_token ]
     end
+  end
+
+  private
+
+  def truncate_device_info
+    self.device_info = self.class.sanitize_device_info(device_info) if device_info.present?
   end
 end

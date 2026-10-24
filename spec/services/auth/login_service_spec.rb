@@ -51,6 +51,19 @@ RSpec.describe Auth::LoginService do
         expect(result.value![:user_token].device_info).to eq('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)')
       end
 
+      it 'truncates device_info exceeding 255 characters without error' do
+        long_ua = 'Mozilla/5.0 ' + ('z' * 300)
+        result = described_class.call(
+          email: 'member@example.com',
+          password: 'Password123!',
+          device_info: long_ua
+        )
+
+        expect(result).to be_success
+        expect(result.value![:user_token].device_info.length).to eq(255)
+        expect(result.value![:user_token].device_info).to eq(long_ua[0, 255])
+      end
+
       it 'creates independent token records on multiple logins across devices' do
         result_device_a = described_class.call(
           email: 'member@example.com',

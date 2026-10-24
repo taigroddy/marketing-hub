@@ -49,6 +49,19 @@ RSpec.describe Auth::RefreshTokenService do
         expect(user_token.device_info).to eq('Updated Browser Info')
       end
 
+      it 'truncates device_info exceeding 255 characters on refresh' do
+        long_ua = 'Mozilla/5.0 ' + ('w' * 300)
+        result = described_class.call(
+          refresh_token: raw_refresh_token,
+          device_info: long_ua
+        )
+
+        expect(result).to be_success
+        user_token.reload
+        expect(user_token.device_info.length).to eq(255)
+        expect(user_token.device_info).to eq(long_ua[0, 255])
+      end
+
       it 'invalidates the previous refresh token after rotation' do
         first_refresh = described_class.call(refresh_token: raw_refresh_token)
         expect(first_refresh).to be_success

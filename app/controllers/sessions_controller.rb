@@ -12,12 +12,16 @@ class SessionsController < ApplicationController
         cookies[:jwt_token] = {
           value: data[:token],
           httponly: true,
-          same_site: :lax
+          secure: Rails.env.production?,
+          same_site: :lax,
+          expires: 1.hour.from_now
         }
         cookies[:refresh_token] = {
           value: data[:refresh_token],
           httponly: true,
-          same_site: :lax
+          secure: Rails.env.production?,
+          same_site: :lax,
+          expires: 30.days.from_now
         }
         redirect_to dashboard_path, notice: "Logged in successfully."
       end
@@ -38,8 +42,8 @@ class SessionsController < ApplicationController
     refresh_token = cookies[:refresh_token] || cookies["refresh_token"]
     Auth::LogoutService.call(refresh_token: refresh_token) if refresh_token.present?
 
-    cookies.delete(:jwt_token)
-    cookies.delete(:refresh_token)
+    cookies.delete(:jwt_token, secure: Rails.env.production?, same_site: :lax)
+    cookies.delete(:refresh_token, secure: Rails.env.production?, same_site: :lax)
     redirect_to login_path, notice: "Logged out successfully."
   end
 

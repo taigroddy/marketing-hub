@@ -65,6 +65,26 @@ RSpec.describe 'Sessions', type: :request do
         expect(db_token.token_digest).to eq(UserToken.digest(cookies[:refresh_token]))
         expect(db_token.device_info).to eq('MarketingHub Browser')
         expect(db_token.active?).to be true
+
+        set_cookie_headers = Array(response.headers['set-cookie'] || response.headers['Set-Cookie'])
+        refresh_cookie_header = set_cookie_headers.find { |header| header.start_with?('refresh_token=') }
+        expect(refresh_cookie_header).to be_present
+        expect(refresh_cookie_header).to include('expires=')
+        expect(refresh_cookie_header).to include('httponly')
+        expect(refresh_cookie_header).to include('samesite=lax')
+      end
+
+      it 'handles User-Agent exceeding 255 characters by truncating device_info' do
+        long_user_agent = 'MarketingHub-Client/1.0 ' + ('U' * 300)
+        post '/login',
+             params: { email: 'member@example.com', password: 'Password123!' },
+             headers: { 'User-Agent' => long_user_agent }
+
+        expect(response).to redirect_to('/dashboard')
+        decoded = Authenticable.decode_jwt(cookies[:jwt_token])
+        db_token = UserToken.find(decoded[:user_token_id])
+        expect(db_token.device_info.length).to eq(255)
+        expect(db_token.device_info).to eq(long_user_agent[0, 255])
       end
     end
 
