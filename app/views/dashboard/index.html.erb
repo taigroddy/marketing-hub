@@ -1,1 +1,240 @@
-<%= render template: "dashboard/show" %>
+<div class="space-y-8">
+  <!-- Top Navigation Bar & Welcome -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+    <div class="flex items-center justify-between pb-6 border-b border-gray-100">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+        <p class="text-sm text-gray-500 mt-1">
+          Welcome back, <span class="font-medium text-gray-800"><%= current_user&.email %></span>
+        </p>
+      </div>
+      <div>
+        <%= button_to "Sign Out", logout_path, method: :delete,
+              class: "px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors cursor-pointer" %>
+      </div>
+    </div>
+
+    <!-- Section 1: Platform Accounts Management -->
+    <div class="mt-8">
+      <div class="flex items-center justify-between pb-4">
+        <div>
+          <h2 class="text-lg font-bold text-gray-900">Tài khoản quảng cáo (Platform Accounts)</h2>
+          <p class="text-sm text-gray-500 mt-0.5">Quản lý và liên kết các tài khoản quảng cáo nền tảng Facebook và Google</p>
+        </div>
+        <div>
+          <button type="button" onclick="document.getElementById('connect-modal').showModal()"
+                  class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors cursor-pointer">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            Liên kết mới
+          </button>
+        </div>
+      </div>
+
+      <% if @platform_accounts.present? && @platform_accounts.any? %>
+        <div class="overflow-x-auto border border-gray-100 rounded-lg mt-3">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th scope="col" class="py-3 px-4">Nền tảng</th>
+                <th scope="col" class="py-3 px-4">Tên tài khoản</th>
+                <th scope="col" class="py-3 px-4">Account ID</th>
+                <th scope="col" class="py-3 px-4">Trạng thái</th>
+                <th scope="col" class="py-3 px-4">Ngày liên kết</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 bg-white">
+              <% @platform_accounts.each do |account| %>
+                <tr class="hover:bg-gray-50 transition-colors">
+                  <td class="py-3.5 px-4 text-sm font-medium text-gray-900 flex items-center space-x-2">
+                    <% if account.type.to_s.include?("Facebook") %>
+                      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                        Facebook
+                      </span>
+                    <% else %>
+                      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">
+                        Google
+                      </span>
+                    <% end %>
+                  </td>
+                  <td class="py-3.5 px-4 text-sm text-gray-800 font-medium">
+                    <%= account.name.presence || "—" %>
+                  </td>
+                  <td class="py-3.5 px-4 text-sm font-mono text-gray-600">
+                    <%= account.account_id %>
+                  </td>
+                  <td class="py-3.5 px-4 text-sm">
+                    <% if account.connected? %>
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Đã kết nối
+                      </span>
+                    <% else %>
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        <%= account.status %>
+                      </span>
+                    <% end %>
+                  </td>
+                  <td class="py-3.5 px-4 text-sm text-gray-500">
+                    <%= account.created_at.strftime("%d/%m/%Y %H:%M") %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% else %>
+        <div class="text-center py-8 px-4 border-2 border-dashed border-gray-200 rounded-xl mt-3">
+          <svg class="mx-auto h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+          </svg>
+          <h3 class="mt-3 text-sm font-semibold text-gray-900">Chưa có tài khoản quảng cáo nào được liên kết</h3>
+          <p class="mt-1 text-xs text-gray-500 max-w-sm mx-auto">
+            Liên kết tài khoản Facebook Ads hoặc Google Ads để đồng bộ và quản lý chiến dịch quảng cáo đa kênh.
+          </p>
+          <div class="mt-4">
+            <button type="button" onclick="document.getElementById('connect-modal').showModal()"
+                    class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors cursor-pointer">
+              Liên kết tài khoản đầu tiên
+            </button>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Modal Liên kết mới -->
+  <dialog id="connect-modal" class="backdrop:bg-gray-900/50 rounded-2xl shadow-2xl p-0 w-full max-w-md border border-gray-100 open:animate-in open:fade-in">
+    <div class="p-6 bg-white rounded-2xl">
+      <div class="flex items-center justify-between pb-4 border-b border-gray-100">
+        <h3 class="text-lg font-bold text-gray-900">Liên kết tài khoản mới</h3>
+        <button type="button" onclick="document.getElementById('connect-modal').close()"
+                class="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="mt-6 space-y-4">
+        <!-- Facebook Option -->
+        <%= link_to "/v1/facebook/oauth/authorize",
+              class: "flex items-center justify-between p-4 border border-blue-200 bg-blue-50/50 hover:bg-blue-100/70 rounded-xl transition-all group cursor-pointer" do %>
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold">
+              f
+            </div>
+            <div>
+              <div class="font-semibold text-gray-900">Facebook Ads</div>
+              <div class="text-xs text-gray-500">Quản lý chiến dịch trên Facebook & Instagram</div>
+            </div>
+          </div>
+          <span class="text-blue-600 group-hover:translate-x-1 transition-transform font-medium text-sm">
+            Kết nối &rarr;
+          </span>
+        <% end %>
+
+        <!-- Google Option (Disabled with Tooltip/Badge) -->
+        <div class="flex items-center justify-between p-4 border border-gray-200 bg-gray-50 rounded-xl opacity-60 cursor-not-allowed relative"
+             title="Sắp ra mắt">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-lg bg-red-500 flex items-center justify-center text-white font-bold">
+              G
+            </div>
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="font-semibold text-gray-900">Google Ads</span>
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
+                  Sắp ra mắt
+                </span>
+              </div>
+              <div class="text-xs text-gray-500">Quản lý chiến dịch trên Google Search & YouTube</div>
+            </div>
+          </div>
+          <button type="button" disabled class="text-gray-400 font-medium text-sm cursor-not-allowed" title="Sắp ra mắt">
+            Chưa hỗ trợ
+          </button>
+        </div>
+      </div>
+
+      <div class="mt-6 pt-4 border-t border-gray-100 flex justify-end">
+        <button type="button" onclick="document.getElementById('connect-modal').close()"
+                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer">
+          Đóng
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Section 2: Campaigns Management -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+    <div class="flex items-center justify-between pb-6 border-b border-gray-100">
+      <div>
+        <h2 class="text-xl font-bold text-gray-900">Campaigns</h2>
+        <p class="text-sm text-gray-500 mt-1">Quản lý và đồng bộ các chiến dịch quảng cáo của bạn</p>
+      </div>
+      <div>
+        <%= link_to "Tạo mới", new_campaign_path,
+              class: "inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors cursor-pointer" %>
+      </div>
+    </div>
+
+    <div class="mt-6">
+      <% if @campaigns.present? && @campaigns.any? %>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead>
+              <tr class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th scope="col" class="py-3 px-4">Tên chiến dịch</th>
+                <th scope="col" class="py-3 px-4">Mục tiêu</th>
+                <th scope="col" class="py-3 px-4">Ngân sách</th>
+                <th scope="col" class="py-3 px-4">Trạng thái</th>
+                <th scope="col" class="py-3 px-4 text-right">Hành động</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 bg-white">
+              <% @campaigns.each do |campaign| %>
+                <tr class="hover:bg-gray-50 transition-colors">
+                  <td class="py-4 px-4 text-sm font-medium text-gray-900">
+                    <%= campaign.name %>
+                  </td>
+                  <td class="py-4 px-4 text-sm text-gray-600">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      <%= campaign.objective %>
+                    </span>
+                  </td>
+                  <td class="py-4 px-4 text-sm font-semibold text-gray-900">
+                    $<%= number_with_precision(campaign.budget, precision: 2) %>
+                  </td>
+                  <td class="py-4 px-4 text-sm">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      <%= campaign.status.capitalize %>
+                    </span>
+                  </td>
+                  <td class="py-4 px-4 text-sm text-right space-x-3">
+                    <%= link_to "View detail", campaign_path(campaign),
+                          class: "text-indigo-600 hover:text-indigo-900 font-medium cursor-pointer" %>
+                    <%= link_to "Sửa budget", edit_campaign_path(campaign),
+                          class: "text-gray-600 hover:text-gray-900 font-medium cursor-pointer" %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% else %>
+        <div class="text-center py-12 px-4 border-2 border-dashed border-gray-200 rounded-xl">
+          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+          <h3 class="mt-4 text-base font-semibold text-gray-900">Chưa có campaign nào</h3>
+          <p class="mt-1 text-sm text-gray-500">Bắt đầu bằng cách tạo một chiến dịch quảng cáo mới cho tài khoản của bạn.</p>
+          <div class="mt-6">
+            <%= link_to "Tạo campaign đầu tiên", new_campaign_path,
+                  class: "inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors cursor-pointer" %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

@@ -38,5 +38,16 @@ module App
 
     # Don't generate system test files.
     config.generators.system_tests = nil
+
+    # Active Record Encryption configuration
+    config.active_record.encryption.primary_key = ENV["ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY"] ||
+      Rails.application.credentials.dig(:active_record_encryption, :primary_key) ||
+      "DkB0j9W7Mq53V8RWpZIqfXz5yck16Ol4"
+    config.active_record.encryption.deterministic_key = ENV["ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY"] ||
+      Rails.application.credentials.dig(:active_record_encryption, :deterministic_key) ||
+      "WvjcSp55ga8wyn6G7LAXc0AqFZwxGMuh"
+    config.active_record.encryption.key_derivation_salt = ENV["ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT"] ||
+      Rails.application.credentials.dig(:active_record_encryption, :key_derivation_salt) ||
+      "ptzSQoyux4rl8pvls4Qn0QIIRsZVVcbJ"
   end
 end

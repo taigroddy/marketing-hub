@@ -73,6 +73,30 @@ module OAuth
       perform_get(uri)
     end
 
+    def fetch_user_info(access_token)
+      raise ArgumentError, "Missing required argument: access_token" if access_token.blank?
+
+      uri = URI.parse("#{GRAPH_API_BASE_URL}/me")
+      uri.query = URI.encode_www_form({
+        access_token: access_token,
+        fields: "id,name"
+      })
+
+      perform_get(uri)
+    end
+
+    def fetch_ad_accounts(access_token)
+      raise ArgumentError, "Missing required argument: access_token" if access_token.blank?
+
+      uri = URI.parse("#{GRAPH_API_BASE_URL}/me/adaccounts")
+      uri.query = URI.encode_www_form({
+        access_token: access_token,
+        fields: "id,name,account_id"
+      })
+
+      perform_get(uri)
+    end
+
     private
 
     def perform_get(uri)

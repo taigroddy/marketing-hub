@@ -160,4 +160,36 @@ RSpec.describe Clients::OAuth::FacebookClient, type: :client do
       end
     end
   end
+
+  describe '#fetch_user_info' do
+    it 'raises ArgumentError when access_token is blank' do
+      expect { client.fetch_user_info('') }.to raise_error(ArgumentError, /access_token/)
+    end
+
+    it 'performs GET to /me and returns Success' do
+      stub_request(:get, 'https://graph.facebook.com/v21.0/me?access_token=token123&fields=id,name')
+        .to_return(status: 200, body: '{"id":"fb_user_1","name":"Test User"}', headers: { 'Content-Type' => 'application/json' })
+
+      result = client.fetch_user_info('token123')
+      expect(result).to be_success
+      expect(result.value![:id]).to eq('fb_user_1')
+      expect(result.value![:name]).to eq('Test User')
+    end
+  end
+
+  describe '#fetch_ad_accounts' do
+    it 'raises ArgumentError when access_token is blank' do
+      expect { client.fetch_ad_accounts('') }.to raise_error(ArgumentError, /access_token/)
+    end
+
+    it 'performs GET to /me/adaccounts and returns Success' do
+      stub_request(:get, 'https://graph.facebook.com/v21.0/me/adaccounts?access_token=token123&fields=id,name,account_id')
+        .to_return(status: 200, body: '{"data":[{"id":"act_123","account_id":"123","name":"Ad Account 1"}]}', headers: { 'Content-Type' => 'application/json' })
+
+      result = client.fetch_ad_accounts('token123')
+      expect(result).to be_success
+      expect(result.value![:data]).to be_an(Array)
+      expect(result.value![:data].first['account_id']).to eq('123')
+    end
+  end
 end
