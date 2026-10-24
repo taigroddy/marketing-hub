@@ -8,42 +8,60 @@ module Api
       before_action :authenticate_user!, only: [ :me ]
 
       def register
-        result = Auth::RegisterService.call(register_params)
-        if result.success?
-          user = result.value![:user]
-          render json: {
-            message: "Registration successful. Please check your email to confirm your account.",
-            user: UserBlueprint.render_as_hash(user)
-          }, status: :created
-        else
-          render json: { errors: result.failure }, status: :unprocessable_entity
+        Auth::RegisterService.call(params) do |m|
+          m.success do |data|
+            render json: {
+              message: "Registration successful. Please check your email to confirm your account.",
+              user: UserBlueprint.render_as_hash(data[:user])
+            }, status: :created
+          end
+
+          m.failure(:validation) do |errors|
+            render json: { errors: errors }, status: :unprocessable_entity
+          end
+
+          m.failure do |error|
+            render json: { errors: error }, status: :unprocessable_entity
+          end
         end
       end
 
       def login
-        result = Auth::LoginService.call(login_params)
-        if result.success?
-          data = result.value!
-          render json: {
-            token: data[:token],
-            user: UserBlueprint.render_as_hash(data[:user])
-          }, status: :ok
-        else
-          handle_login_failure(result.failure)
+        Auth::LoginService.call(params) do |m|
+          m.success do |data|
+            render json: {
+              token: data[:token],
+              user: UserBlueprint.render_as_hash(data[:user])
+            }, status: :ok
+          end
+
+          m.failure(:validation) do |errors|
+            render json: { errors: errors }, status: :unprocessable_entity
+          end
+
+          m.failure do |error|
+            handle_login_failure(error)
+          end
         end
       end
 
       def confirm_email
-        result = Auth::ConfirmEmailService.call(token: params[:token])
-        if result.success?
-          data = result.value!
-          render json: {
-            token: data[:token],
-            user: UserBlueprint.render_as_hash(data[:user]),
-            message: "Email confirmed successfully."
-          }, status: :ok
-        else
-          render json: { error: "Invalid or expired confirmation token." }, status: :unprocessable_entity
+        Auth::ConfirmEmailService.call(params) do |m|
+          m.success do |data|
+            render json: {
+              token: data[:token],
+              user: UserBlueprint.render_as_hash(data[:user]),
+              message: "Email confirmed successfully."
+            }, status: :ok
+          end
+
+          m.failure(:validation) do |_errors|
+            render json: { error: "Invalid or expired confirmation token." }, status: :unprocessable_entity
+          end
+
+          m.failure do |_error|
+            render json: { error: "Invalid or expired confirmation token." }, status: :unprocessable_entity
+          end
         end
       end
 
@@ -52,14 +70,6 @@ module Api
       end
 
       private
-
-      def register_params
-        params.permit(:email, :password, :password_confirmation)
-      end
-
-      def login_params
-        params.permit(:email, :password)
-      end
 
       def handle_login_failure(failure)
         case failure

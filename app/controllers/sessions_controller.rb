@@ -6,18 +6,25 @@ class SessionsController < ApplicationController
   end
 
   def create
-    result = Auth::LoginService.call(login_params)
+    Auth::LoginService.call(params) do |m|
+      m.success do |data|
+        cookies[:jwt_token] = {
+          value: data[:token],
+          httponly: true,
+          same_site: :lax
+        }
+        redirect_to dashboard_path, notice: "Logged in successfully."
+      end
 
-    if result.success?
-      cookies[:jwt_token] = {
-        value: result.value![:token],
-        httponly: true,
-        same_site: :lax
-      }
-      redirect_to dashboard_path, notice: "Logged in successfully."
-    else
-      handle_login_failure(result.failure)
-      render :new, status: :unprocessable_entity
+      m.failure(:validation) do |_errors|
+        flash.now[:alert] = "Please enter a valid email and password."
+        render :new, status: :unprocessable_entity
+      end
+
+      m.failure do |error|
+        handle_login_failure(error)
+        render :new, status: :unprocessable_entity
+      end
     end
   end
 
@@ -27,10 +34,6 @@ class SessionsController < ApplicationController
   end
 
   private
-
-  def login_params
-    params.permit(:email, :password)
-  end
 
   def handle_login_failure(failure)
     flash.now[:alert] = case failure

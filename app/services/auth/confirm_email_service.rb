@@ -9,7 +9,8 @@ module Auth
     protected
 
     def validation(input)
-      token = input[:token].to_s.strip
+      normalized = input.respond_to?(:to_unsafe_h) ? input.to_unsafe_h : input
+      token = (normalized[:token] || normalized["token"]).to_s.strip
       if token.blank?
         Failure(:invalid_token)
       else
