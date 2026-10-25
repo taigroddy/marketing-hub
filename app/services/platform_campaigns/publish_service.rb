@@ -22,10 +22,12 @@ module PlatformCampaigns
       campaign = Campaign.find_by(id: input[:id])
       return Failure(campaign: [ "not found" ]) if campaign.nil?
 
-      return Failure(error: "Google platform integration coming soon") if input[:platform] == "google"
+      account_class = "PlatformAccount::#{input[:platform].to_s.classify}".constantize
+      client_class = "Clients::AdCampaign::#{input[:platform].to_s.classify}Client".constantize
+      client_class.new
 
-      accounts = PlatformAccount.where(id: input[:platform_account_ids]).to_a
-      if accounts.size != input[:platform_account_ids].size || accounts.any? { |a| a.platform_name.downcase != input[:platform] }
+      accounts = account_class.where(id: input[:platform_account_ids]).to_a
+      if accounts.size != input[:platform_account_ids].size
         return Failure(platform_accounts: [ "invalid or not found" ])
       end
 

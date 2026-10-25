@@ -31,17 +31,31 @@ module PlatformCampaigns
       account = input[:account]
       platform_name = account.platform_name.to_s.downcase
 
-      api_result = case platform_name
-      when "facebook"
-        sync_facebook(platform_campaign, campaign, account)
-      when "google"
-        Failure(error: "Google platform integration coming soon")
+      client_class = "Clients::AdCampaign::#{platform_name.classify}Client".constantize
+      client = client_class.new(
+        access_token: account.access_token,
+        account_id: account.account_id
+      )
+
+      api_result = if platform_campaign.external_campaign_id.present?
+        client.update_campaign(
+          campaign_id: platform_campaign.external_campaign_id,
+          budget: campaign.budget,
+          name: campaign.name
+        )
       else
-        Failure(error: "Unsupported platform: #{platform_name}")
+        client.create_campaign(
+          name: campaign.name,
+          objective: campaign.objective,
+          budget: campaign.budget,
+          account_id: account.account_id
+        )
       end
 
       Success(input.merge(api_result: api_result))
-    rescue StandardError => e
+    rescue NameError
+      Success(input.merge(api_result: Failure(error: "Unsupported platform: #{platform_name}")))
+    rescue StandardError, ScriptError => e
       Success(input.merge(api_result: Failure(error: e.message)))
     end
 
@@ -129,28 +143,6 @@ module PlatformCampaigns
           platform_campaigns: ordered_platform_campaigns
         }
       )
-    end
-
-    def sync_facebook(platform_campaign, campaign, account)
-      client = Clients::AdCampaign::FacebookClient.new(
-        access_token: account.access_token,
-        account_id: account.account_id
-      )
-
-      if platform_campaign.external_campaign_id.present?
-        client.update_campaign(
-          campaign_id: platform_campaign.external_campaign_id,
-          budget: campaign.budget,
-          name: campaign.name
-        )
-      else
-        client.create_campaign(
-          name: campaign.name,
-          objective: campaign.objective,
-          budget: campaign.budget,
-          account_id: account.account_id
-        )
-      end
     end
 
     def extract_error_message(failure)

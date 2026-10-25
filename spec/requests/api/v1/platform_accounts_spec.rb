@@ -76,7 +76,7 @@ RSpec.describe "Api::V1::PlatformAccounts", type: :request do
         end
       end
 
-      response 501, "Platform integration coming soon" do
+      response 404, "Platform integration coming soon or unsupported" do
         schema type: :object,
                properties: {
                  success: { type: :boolean, example: false },
@@ -242,9 +242,9 @@ RSpec.describe "Api::V1::PlatformAccounts", type: :request do
       expect(json["data"]["authorize_url"]).to include("https://www.facebook.com/v21.0/dialog/oauth")
     end
 
-    it "returns 422 when Google platform callback is invoked" do
+    it "returns 404 when Google platform callback is invoked" do
       get "/api/v1/google/oauth/callback", params: { code: "google_code" }, headers: headers
-      expect(response).to have_http_status(:unprocessable_content)
+      expect(response).to have_http_status(:not_found)
       json = JSON.parse(response.body)
       expect(json["success"]).to be false
       expect(json["data"]).to be_nil
@@ -253,7 +253,7 @@ RSpec.describe "Api::V1::PlatformAccounts", type: :request do
 
     it "routes alias /oauth/:platform/callback to platform accounts callback" do
       get "/oauth/google/callback", params: { code: "google_code" }, headers: headers
-      expect(response).to have_http_status(:unprocessable_content)
+      expect(response).to have_http_status(:not_found)
       json = JSON.parse(response.body)
       expect(json["success"]).to be false
       expect(json["data"]).to be_nil

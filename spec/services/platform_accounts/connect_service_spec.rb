@@ -36,11 +36,10 @@ RSpec.describe PlatformAccounts::ConnectService, type: :service do
   end
 
   describe 'google platform integration' do
-    it 'returns failure indicating google is not yet supported' do
-      result = described_class.call(platform: 'google', code: 'valid_code')
-
-      expect(result).to be_failure
-      expect(result.failure[:error]).to include('Google platform integration coming soon')
+    it 'raises NotImplementedError indicating google is not yet supported' do
+      expect do
+        described_class.call(platform: 'google', code: 'valid_code')
+      end.to raise_error(NotImplementedError, /Google platform integration coming soon/)
     end
   end
 

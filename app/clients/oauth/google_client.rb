@@ -18,6 +18,10 @@ module OAuth
     def refresh_token(*_args, **_kwargs)
       raise NotImplementedError, "Google platform integration coming soon"
     end
+
+    def revoke_token(*_args, **_kwargs)
+      raise NotImplementedError, "Google platform integration coming soon"
+    end
   end
 end
 

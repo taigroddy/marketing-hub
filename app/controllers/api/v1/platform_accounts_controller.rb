@@ -7,6 +7,8 @@ module Api
       skip_before_action :allow_browser, raise: false
       before_action :authenticate_user!
 
+      rescue_from NameError, NotImplementedError, with: :handle_platform_error
+
       def index
         accounts = PlatformAccount.order(created_at: :desc)
         render json: {
@@ -17,27 +19,19 @@ module Api
       end
 
       def authorize
-        platform = params[:platform].to_s.downcase
+        client_class = "Clients::OAuth::#{params[:platform].to_s.classify}Client".constantize
+        client = client_class.new
+        auth_url = client.authorize_url(
+          state: params[:state],
+          redirect_uri: params[:redirect_uri],
+          scope: params[:scope]
+        )
 
-        case platform
-        when "facebook"
-          client = Clients::OAuth::FacebookClient.new
-          auth_url = client.authorize_url(
-            state: params[:state],
-            redirect_uri: params[:redirect_uri],
-            scope: params[:scope]
-          )
-
-          render json: {
-            success: true,
-            data: { authorize_url: auth_url },
-            errors: nil
-          }, status: :ok
-        when "google"
-          render json: { success: false, data: nil, errors: "Google platform integration coming soon" }, status: :not_implemented
-        else
-          render json: { success: false, data: nil, errors: "Unsupported platform: #{platform}" }, status: :bad_request
-        end
+        render json: {
+          success: true,
+          data: { authorize_url: auth_url },
+          errors: nil
+        }, status: :ok
       end
 
       def callback
@@ -77,6 +71,19 @@ module Api
       end
 
       private
+
+      def handle_platform_error(exception)
+        error_msg = exception.message.presence || "Platform not supported"
+        if request.format.json?
+          render json: {
+            success: false,
+            data: nil,
+            errors: error_msg
+          }, status: :not_found
+        else
+          redirect_to dashboard_path, alert: "Kết nối thất bại: #{error_msg}"
+        end
+      end
 
       def render_unauthorized(message = "Unauthorized")
         render json: { success: false, data: nil, errors: message }, status: :unauthorized

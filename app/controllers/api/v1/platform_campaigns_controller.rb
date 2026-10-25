@@ -7,6 +7,8 @@ module Api
       skip_before_action :allow_browser, raise: false
       before_action :authenticate_user!
 
+      rescue_from NameError, NotImplementedError, with: :handle_platform_error
+
       def publish
         PlatformCampaigns::PublishService.call(full_request_params) do |m|
           m.success do |result|
@@ -66,6 +68,14 @@ module Api
       end
 
       private
+
+      def handle_platform_error(exception)
+        render json: {
+          success: false,
+          data: nil,
+          errors: exception.message.presence || "Platform not supported"
+        }, status: :not_found
+      end
 
       def render_unauthorized(message = "Unauthorized")
         render json: { success: false, data: nil, errors: message }, status: :unauthorized

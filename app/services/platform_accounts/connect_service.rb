@@ -17,11 +17,10 @@ module PlatformAccounts
     end
 
     def save_platform_account(input)
-      return Failure(error: "Google platform integration coming soon") if input[:platform].to_s.downcase == "google"
+      client_class = "Clients::OAuth::#{input[:platform].to_s.classify}Client".constantize
+      account_class = "PlatformAccount::#{input[:platform].to_s.classify}".constantize
 
-      user = Current.user
-      client = Clients::OAuth::FacebookClient.new
-
+      client = client_class.new
       exchange_result = client.exchange_code(code: input[:code], redirect_uri: input[:redirect_uri])
       return Failure(exchange_result.failure) if exchange_result.failure?
 
@@ -54,13 +53,13 @@ module PlatformAccounts
         end
       end
 
-      account_id ||= token_data[:account_id] || "act_#{user&.id}"
-      name ||= token_data[:name] || "Facebook Ad Account"
+      account_id ||= token_data[:account_id] || "act_#{Current.user&.id}"
+      name ||= token_data[:name] || "#{input[:platform].to_s.titleize} Ad Account"
 
-      account = PlatformAccount::Facebook.find_or_initialize_by(
+      account = account_class.find_or_initialize_by(
         account_id: account_id.to_s
       )
-      account.user = user if user
+      account.user = Current.user if Current.user
 
       account.assign_attributes(
         name: name,

@@ -371,12 +371,12 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
       expect(json["errors"]).to be_present
     end
 
-    it "returns 422 when publishing to unsupported google platform" do
+    it "returns 404 when publishing to unsupported google platform" do
       post "/api/v1/google/campaigns/#{campaign.id}/publish",
            params: { platform_account_ids: [ account_fb.id ] },
            headers: headers,
            as: :json
-      expect(response).to have_http_status(:unprocessable_content)
+      expect(response).to have_http_status(:not_found)
       json = JSON.parse(response.body)
       expect(json["success"]).to be false
       expect(json["data"]).to be_nil

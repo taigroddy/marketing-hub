@@ -127,14 +127,14 @@ RSpec.describe PlatformCampaigns::PublishService, type: :service do
       expect(result.failure[:platform_accounts]).to include('invalid or not found')
     end
 
-    it 'fails when Google platform is requested' do
-      result = described_class.call(
-        id: campaign.id,
-        platform: 'google',
-        platform_account_ids: [ account_fb1.id ]
-      )
-      expect(result).to be_failure
-      expect(result.failure[:error]).to include('Google platform integration coming soon')
+    it 'raises NotImplementedError when Google platform is requested' do
+      expect do
+        described_class.call(
+          id: campaign.id,
+          platform: 'google',
+          platform_account_ids: [ account_fb1.id ]
+        )
+      end.to raise_error(NotImplementedError, /Google platform integration coming soon/)
     end
 
     it 'fails validation if an account has already been published for this campaign' do

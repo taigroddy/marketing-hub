@@ -23,8 +23,12 @@ module PlatformCampaigns
       campaign = Campaign.find_by(id: input[:id])
       return Failure(campaign: [ "not found" ]) if campaign.nil?
 
+      account_class = "PlatformAccount::#{input[:platform].to_s.classify}".constantize
+      client_class = "Clients::AdCampaign::#{input[:platform].to_s.classify}Client".constantize
+      client_class.new
+
       records = campaign.platform_campaigns.joins(:platform_account)
-                        .where(platform_accounts: { type: "PlatformAccount::#{input[:platform].camelize}" })
+                        .where(platform_accounts: { type: account_class.name })
                         .where(id: input[:platform_campaign_id])
 
       return Failure(platform_campaigns: [ "not found" ]) if records.empty?
