@@ -11,6 +11,10 @@ VCR.configure do |config|
 
   config.filter_sensitive_data('<FB_APP_ID>') { ENV['FB_APP_ID'] }
   config.filter_sensitive_data('<FB_APP_SECRET>') { ENV['FB_APP_SECRET'] }
+  if ENV['FB_TEST_ACCESS_TOKEN'].present?
+    config.filter_sensitive_data('<FB_TEST_ACCESS_TOKEN>') { ENV['FB_TEST_ACCESS_TOKEN'] }
+    config.filter_sensitive_data('<FB_TEST_ACCESS_TOKEN>') { CGI.escape(ENV['FB_TEST_ACCESS_TOKEN']) }
+  end
 
   config.default_cassette_options = {
     record: :once,

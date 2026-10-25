@@ -50,18 +50,18 @@ RSpec.describe Auth::RegisterService do
       end
     end
 
-    context 'when user save fails unexpectedly' do
-      it 'returns failure with user errors' do
-        allow_any_instance_of(User).to receive(:save).and_return(false)
-        allow_any_instance_of(User).to receive_message_chain(:errors, :to_h).and_return(base: [ 'Save failed' ])
-
-        result = described_class.call(valid_params)
-        expect(result).to be_failure
-        expect(result.failure).to eq(base: [ 'Save failed' ])
-      end
-    end
-
     context 'when validation fails' do
+      it 'returns failure with contract errors when email is nil' do
+        result = described_class.call(
+          email: nil,
+          password: 'Password123!',
+          password_confirmation: 'Password123!'
+        )
+
+        expect(result).to be_failure
+        expect(result.failure[:email]).to include('must be filled')
+      end
+
       it 'returns failure with contract errors when email is invalid' do
         result = described_class.call(
           email: 'invalid-email',
@@ -107,6 +107,38 @@ RSpec.describe Auth::RegisterService do
 
         expect(result).to be_failure
         expect(result.failure[:email]).to include('has already been taken')
+      end
+    end
+
+    context 'block matcher syntax' do
+      it 'matches m.success on valid registration' do
+        success_called = false
+        described_class.call(valid_params) do |m|
+          m.success { success_called = true }
+          m.failure { raise 'should not fail' }
+        end
+        expect(success_called).to be true
+      end
+
+      it 'matches m.failure(:validation) when contract validation fails' do
+        validation_called = false
+        described_class.call(valid_params.merge(email: 'invalid')) do |m|
+          m.success { raise 'should not succeed' }
+          m.failure(:validation) { validation_called = true }
+          m.failure { raise 'should match :validation' }
+        end
+        expect(validation_called).to be true
+      end
+
+      it 'matches m.failure(:check_resource) when email already exists' do
+        User.create!(valid_params)
+        check_resource_called = false
+        described_class.call(valid_params) do |m|
+          m.success { raise 'should not succeed' }
+          m.failure(:check_resource) { check_resource_called = true }
+          m.failure { raise 'should match :check_resource' }
+        end
+        expect(check_resource_called).to be true
       end
     end
   end

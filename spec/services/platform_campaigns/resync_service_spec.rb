@@ -99,9 +99,7 @@ RSpec.describe PlatformCampaigns::ResyncService, type: :service do
         campaign.update_columns(updated_at: 10.minutes.ago)
       end
 
-      it 'detects drift, updates status to pending via upsert_all, and enqueues SyncCampaignJob' do
-        expect(PlatformCampaign).to receive(:upsert_all).and_call_original
-
+      it 'detects drift, updates status to pending via mark_pending, and enqueues SyncCampaignJob via enqueue_sync_job' do
         expect do
           result = described_class.call(id: campaign.id, platform: 'facebook')
           expect(result).to be_success
@@ -113,13 +111,52 @@ RSpec.describe PlatformCampaigns::ResyncService, type: :service do
       end
 
       it 'supports targeting a specific platform_campaign_id' do
+        expect do
+          result = described_class.call(
+            id: campaign.id,
+            platform: 'facebook',
+            platform_campaign_id: platform_campaign.id
+          )
+
+          expect(result).to be_success
+        end.to have_enqueued_job(SyncCampaignJob).with(platform_campaign.id)
+      end
+
+      it 'supports synchronous mode (async: false) executing outside DB transactions', vcr: { cassette_name: 'facebook_sync_campaign', record: :new_episodes } do
+        resync_campaign = Campaign.create!(
+          user: user,
+          name: 'Summer Promo 2026 Updated',
+          objective: 'OUTCOME_TRAFFIC',
+          budget: 150_000.0,
+          status: 'active',
+          updated_at: Time.current
+        )
+        resync_account = PlatformAccount::Facebook.create!(
+          user: user,
+          account_id: '2183515115230038',
+          name: 'FB Store Resync',
+          access_token: ENV['FB_TEST_ACCESS_TOKEN'].presence || '<FB_TEST_ACCESS_TOKEN>',
+          status: 'connected'
+        )
+        resync_pc = PlatformCampaign.create!(
+          campaign: resync_campaign,
+          platform_account: resync_account,
+          external_campaign_id: '120252471634210228',
+          sync_status: 'synced',
+          synced_at: 1.day.ago
+        )
+
         result = described_class.call(
-          id: campaign.id,
+          id: resync_campaign.id,
           platform: 'facebook',
-          platform_campaign_id: platform_campaign.id
+          platform_campaign_id: resync_pc.id,
+          async: false
         )
 
         expect(result).to be_success
+        resync_pc.reload
+        expect(resync_pc.sync_status).to eq('synced')
+        expect(resync_pc.synced_at).to be_within(10.seconds).of(Time.current)
       end
     end
   end

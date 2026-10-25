@@ -4,7 +4,8 @@ module PlatformCampaigns
   class PublishService < ApplicationService
     step :validation
     step :check_resource
-    step :process
+    step :upsert_records
+    step :enqueue_sync_jobs
 
     protected
 
@@ -61,7 +62,7 @@ module PlatformCampaigns
       Success(input.merge(user: user, campaign: campaign, accounts: accounts))
     end
 
-    def process(input)
+    def upsert_records(input)
       campaign = input[:campaign]
       accounts = input[:accounts]
       now = Time.current
@@ -81,7 +82,13 @@ module PlatformCampaigns
       platform_campaigns = PlatformCampaign.where(
         campaign_id: campaign.id,
         platform_account_id: accounts.map(&:id)
-      )
+      ).to_a
+
+      Success(input.merge(platform_campaigns: platform_campaigns))
+    end
+
+    def enqueue_sync_jobs(input)
+      platform_campaigns = input[:platform_campaigns]
 
       platform_campaigns.each do |pc|
         if input[:async] == false
@@ -92,7 +99,7 @@ module PlatformCampaigns
       end
 
       final_records = PlatformCampaign.where(id: platform_campaigns.map(&:id))
-      Success(campaign: campaign, platform_campaigns: final_records)
+      Success(campaign: input[:campaign], platform_campaigns: final_records)
     end
   end
 end

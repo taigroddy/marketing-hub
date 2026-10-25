@@ -5,7 +5,8 @@ module PlatformCampaigns
     step :validation
     step :check_resource
     step :detect_drift
-    step :process
+    step :mark_pending
+    step :enqueue_sync_job
 
     protected
 
@@ -58,7 +59,7 @@ module PlatformCampaigns
       Success(input.merge(target_records: target_records))
     end
 
-    def process(input)
+    def mark_pending(input)
       now = Time.current
 
       updates = input[:target_records].map do |pc|
@@ -76,6 +77,10 @@ module PlatformCampaigns
 
       PlatformCampaign.upsert_all(updates, unique_by: :id)
 
+      Success(input)
+    end
+
+    def enqueue_sync_job(input)
       input[:target_records].each do |pc|
         if input[:async] == false
           SyncCampaignJob.perform_now(pc.id)

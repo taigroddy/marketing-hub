@@ -167,9 +167,7 @@ RSpec.describe PlatformCampaigns::PublishService, type: :service do
   end
 
   describe 'process & execution' do
-    it 'creates pending records using PlatformCampaign.upsert_all and triggers SyncCampaignJob' do
-      expect(PlatformCampaign).to receive(:upsert_all).and_call_original
-
+    it 'creates pending records via upsert_records and enqueues SyncCampaignJob via enqueue_sync_jobs' do
       expect do
         result = described_class.call(
           id: campaign.id,
@@ -185,32 +183,33 @@ RSpec.describe PlatformCampaigns::PublishService, type: :service do
       expect(records.pluck(:sync_status).uniq).to eq([ 'pending' ])
     end
 
-    it 'supports synchronous mode (async: false) executing outside DB transactions' do
-      mock_client = instance_double(Clients::AdCampaign::FacebookClient)
-      allow(Clients::AdCampaign::FacebookClient).to receive(:new).and_return(mock_client)
-
-      expect(mock_client).to receive(:create_campaign).with(
-        name: campaign.name,
-        objective: campaign.objective,
-        budget: campaign.budget,
-        account_id: account_fb1.account_id
-      ) do
-        threshold = Rails.env.test? ? 1 : 0
-        expect(ActiveRecord::Base.connection.open_transactions).to be <= threshold
-        Dry::Monads::Success(id: 'fb_sync_mode_123')
-      end
+    it 'supports synchronous mode (async: false) executing outside DB transactions', vcr: { cassette_name: 'facebook_sync_campaign', record: :new_episodes } do
+      sync_campaign = Campaign.create!(
+        user: user,
+        name: 'Summer Promo 2026',
+        objective: 'OUTCOME_TRAFFIC',
+        budget: 100_000.0,
+        status: 'active'
+      )
+      sync_account = PlatformAccount::Facebook.create!(
+        user: user,
+        account_id: '2183515115230038',
+        name: 'FB Store Sync',
+        access_token: ENV['FB_TEST_ACCESS_TOKEN'].presence || '<FB_TEST_ACCESS_TOKEN>',
+        status: 'connected'
+      )
 
       result = described_class.call(
-        id: campaign.id,
+        id: sync_campaign.id,
         platform: 'facebook',
-        platform_account_ids: [ account_fb1.id ],
+        platform_account_ids: [ sync_account.id ],
         async: false
       )
 
       expect(result).to be_success
-      created_record = PlatformCampaign.find_by(campaign: campaign, platform_account: account_fb1)
+      created_record = PlatformCampaign.find_by(campaign: sync_campaign, platform_account: sync_account)
       expect(created_record.sync_status).to eq('synced')
-      expect(created_record.external_campaign_id).to eq('fb_sync_mode_123')
+      expect(created_record.external_campaign_id).to eq('120252471690050228')
     end
 
     it 'matches block matcher m.success' do

@@ -1,0 +1,297 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: https://graph.facebook.com/v21.0/act_2183515115230038/campaigns?access_token=<FB_TEST_ACCESS_TOKEN>
+    body:
+      encoding: UTF-8
+      string: daily_budget=100000.0&name=Summer+Promo+2026&objective=OUTCOME_TRAFFIC&special_ad_categories=%5B%22NONE%22%5D&status=PAUSED
+    headers:
+      User-Agent:
+      - fbbizsdk-ruby-v26.0.2
+      Content-Type:
+      - application/x-www-form-urlencoded
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+      Vary:
+      - Origin
+      X-Ad-Api-Version-Warning:
+      - The call has been auto-upgraded to v26.0 as v21.0 has been deprecated.
+      X-Business-Use-Case-Usage:
+      - '{"2183515115230038":[{"type":"ads_management","call_count":2,"total_cputime":1,"total_time":1,"estimated_time_to_regain_access":0,"ads_api_access_tier":"development_access"}]}'
+      Access-Control-Allow-Origin:
+      - "*"
+      Facebook-Api-Version:
+      - v26.0
+      Strict-Transport-Security:
+      - max-age=15552000; preload
+      Pragma:
+      - no-cache
+      Cache-Control:
+      - private, no-cache, no-store, must-revalidate
+      Expires:
+      - Sat, 01 Jan 2000 00:00:00 GMT
+      X-Fb-Request-Id:
+      - ARkSU-R-o7qmLKRSDbRn3kA
+      X-Fb-Trace-Id:
+      - HZplym5D3Wy
+      X-Fb-Rev:
+      - '1051591765'
+      X-Fb-Debug:
+      - 9kHM4E+aeEro21OMqZvnL8MfTtpKGubvGnUB3TR4DDmnH8E5AdVVg3p3whKIhA8GaQ0CsOuTGE/hbT3uyJLQiQ==
+      Date:
+      - Sat, 24 Oct 2026 09:37:08 GMT
+      X-Fb-Connection-Quality:
+      - GOOD; q=0.7, rtt=51, rtx=0, c=10, mss=1380, tbw=3634, tp=-1, tpl=-1, uplat=1091,
+        ullat=0
+      Alt-Svc:
+      - h3=":443"; ma=86400
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '27'
+    body:
+      encoding: UTF-8
+      string: '{"id":"120252471690050228"}'
+  recorded_at: Sat, 24 Oct 2026 09:37:08 GMT
+- request:
+    method: post
+    uri: https://graph.facebook.com/v21.0/120252471634210228?access_token=<FB_TEST_ACCESS_TOKEN>
+    body:
+      encoding: UTF-8
+      string: daily_budget=150000.0&name=Summer+Promo+2026+Updated
+    headers:
+      User-Agent:
+      - fbbizsdk-ruby-v26.0.2
+      Content-Type:
+      - application/x-www-form-urlencoded
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+      Vary:
+      - Origin
+      X-Ad-Api-Version-Warning:
+      - The call has been auto-upgraded to v26.0 as v21.0 has been deprecated.
+      X-Business-Use-Case-Usage:
+      - '{"2183515115230038":[{"type":"ads_management","call_count":2,"total_cputime":1,"total_time":2,"estimated_time_to_regain_access":0,"ads_api_access_tier":"development_access"}]}'
+      Access-Control-Allow-Origin:
+      - "*"
+      Facebook-Api-Version:
+      - v26.0
+      Strict-Transport-Security:
+      - max-age=15552000; preload
+      Pragma:
+      - no-cache
+      Cache-Control:
+      - private, no-cache, no-store, must-revalidate
+      Expires:
+      - Sat, 01 Jan 2000 00:00:00 GMT
+      X-Fb-Request-Id:
+      - AWSQMpA67RS2JpEdzhQ6RbV
+      X-Fb-Trace-Id:
+      - AK5glwM1dxk
+      X-Fb-Rev:
+      - '1051591765'
+      X-Fb-Debug:
+      - eHljM7ddTIH2uSxn0BhgyEidHBxqzir3RJPPhP1dtptNE+IWv/PUdVXmshIJymXebof4d76e2UAh3m5NpuZ3zA==
+      Date:
+      - Sat, 24 Oct 2026 09:37:09 GMT
+      X-Fb-Connection-Quality:
+      - GOOD; q=0.7, rtt=72, rtx=0, c=10, mss=1380, tbw=3633, tp=-1, tpl=-1, uplat=1130,
+        ullat=0
+      Alt-Svc:
+      - h3=":443"; ma=86400
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '16'
+    body:
+      encoding: UTF-8
+      string: '{"success":true}'
+  recorded_at: Sat, 24 Oct 2026 09:37:09 GMT
+- request:
+    method: post
+    uri: https://graph.facebook.com/v21.0/invalid_campaign_id_99999?access_token=<FB_TEST_ACCESS_TOKEN>
+    body:
+      encoding: UTF-8
+      string: daily_budget=100000.0&name=Summer+Promo+2026
+    headers:
+      User-Agent:
+      - fbbizsdk-ruby-v26.0.2
+      Content-Type:
+      - application/x-www-form-urlencoded
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+  response:
+    status:
+      code: 400
+      message: Bad Request
+    headers:
+      Debug-Link:
+      - https://www.meta.com/debug/?mid=1b58965a90b35b0e1d734ce192a458f9
+      Error-Mid:
+      - 1b58965a90b35b0e1d734ce192a458f9
+      Vary:
+      - Accept-Encoding
+      - Origin
+      Access-Control-Allow-Origin:
+      - "*"
+      X-Ad-Api-Version-Warning:
+      - The call has been auto-upgraded to v26.0 as v21.0 has been deprecated.
+      Cross-Origin-Resource-Policy:
+      - cross-origin
+      X-App-Usage:
+      - '{"call_count":2,"total_cputime":0,"total_time":2}'
+      Content-Type:
+      - application/json; charset=UTF-8
+      Www-Authenticate:
+      - OAuth "Facebook Platform" "invalid_request" "Unsupported post request. Object
+        with ID 'invalid_campaign_id_99999' does not exist, cannot be loaded due to
+        missing permissions, or does not support this operation. Please read the Graph
+        API documentation at https://developers.facebook.com/docs/graph-api"
+      Facebook-Api-Version:
+      - v26.0
+      Strict-Transport-Security:
+      - max-age=15552000; preload
+      Pragma:
+      - no-cache
+      Cache-Control:
+      - no-store
+      Expires:
+      - Sat, 01 Jan 2000 00:00:00 GMT
+      X-Fb-Request-Id:
+      - AYavwRHxJJhApGcCM4dADcn
+      X-Fb-Trace-Id:
+      - GpqkwZyEFvI
+      X-Fb-Rev:
+      - '1051594400'
+      X-Fb-Debug:
+      - qhsaItQeL+ipFBbYC8NlspKHBbPgCFtx8tGmrFIz0MZwL0MpndplCy4xsGedIZOJGJ7xKHYXU2kQNgviBen+BQ==
+      Date:
+      - Sat, 24 Oct 2026 09:37:10 GMT
+      Proxy-Status:
+      - http_request_error; e_proxy="AcTfnVjg71EQI9NdD5tWVkr2ec4Q9e5VyWQMF7SUfX8Z4EHTCNE6xKawPCRt6_EkE-zDd5WhsFq3eAALuXsT";
+        e_fb_twtaskhandle="AcSLRAmxq6rgSyY6VPRUhkqqGDCtqTzh8EeN4VASzD4zR_IGFo2dORGaYh7oi9hGLMOgmdrA3sdlNrojaq1pDKk2qIBbu9U8kVONzmFJPga-A6o";
+        e_upip="AcRXyX2MC9lBrn6rU-krFXqWrF2YJVPukq74_A908U6wBLm9yWyub0LvXJto32HNTx3Xe9wHiY5eAc7QZtkHvXwZ2hXn69IeWrmNLtPSbQw";
+        e_fb_zone="AcSdAmtxcX-IUPmn0z4BaH9ZlLQmRb_dmPZUwZJzXFoeIADaecreDjOxWLvMrt3_";
+        e_clientaddr="AcTpiZ2D52M1NB51DKfxn6UZT0HMBcWQjSnNsTU8I1nBeH3YakOOE20o5qunNp_jxKF-4pbA-jS31KOzkbqSRi2UIjWAgi5cFogrCuQK_oWpgRqT9Q";
+        e_fb_vipaddr="AcRjebCpzA6fgJav02cn2JZKDYCG7OjD6q5H57xu4936DqKfNi5BKXixtvt0MzFspTW_ZqVYyVTW0Xm96zuKxfj8NdUhRftgd0sXFh4",
+        http_request_error; e_proxy="AcQ-UXuXqYFz82_O7DKrdaIFdlBdKWUek4HkA1BylLkG8cgF5KSYZZSEW5-AUGS8Nlsdw_WV8mVFhhjr";
+        e_fb_twtaskhandle="AcS4MxVfbUJiz2H2nXhSstuCOMAO0Z8Srlv8SDuuD6jYjQwneAtZft4rOW_UzVi244CS9amddpf8pWi_yKXAFD9l34y0GkncKBQh";
+        e_upip="AcRdZaJFcXd1pbzVeGvAE8I-ypmFThvnFGMz7BZbaskx6uzRZy0_jtHy-4ppmWvQjGLIZQxIzlCRFLObU6Sq0_yrHueEwsrRKybxphI";
+        e_fb_zone="AcR4vqDBBXUSTN7IhCy9GFvUUpIHfGZtMZmbHw0TuaKW0VP5xA6otf_4lkHADA";
+        e_clientaddr="AcQLSOtJRdasyRQCKaRxOMd_SBjXlJybMzUeAJmEuRkTASsQRL-SFc9ir97uUwmOY-Mp__wc4NBh8pRPjqE";
+        e_fb_vipaddr="AcQ4gxdoKgWXPZGbu6FbdKSzhz9V-fjaChX5sYeia_YpTZf35o5QJ5qgpczIYAuISNyqGJ0zQA"
+      X-Fb-Connection-Quality:
+      - GOOD; q=0.7, rtt=53, rtx=0, c=10, mss=1380, tbw=3633, tp=-1, tpl=-1, uplat=215,
+        ullat=0
+      Alt-Svc:
+      - h3=":443"; ma=86400
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '382'
+    body:
+      encoding: ASCII-8BIT
+      string: '{"error":{"message":"Unsupported post request. Object with ID ''invalid_campaign_id_99999''
+        does not exist, cannot be loaded due to missing permissions, or does not support
+        this operation. Please read the Graph API documentation at https:\/\/developers.facebook.com\/docs\/graph-api","type":"GraphMethodException","code":100,"error_subcode":33,"fbtrace_id":"AYavwRHxJJhApGcCM4dADcn"}}'
+  recorded_at: Sat, 24 Oct 2026 09:37:10 GMT
+- request:
+    method: post
+    uri: https://graph.facebook.com/v21.0/act_2183515115230038/campaigns?access_token=%3CFB_TEST_ACCESS_TOKEN%3E
+    body:
+      encoding: UTF-8
+      string: daily_budget=100000.0&name=Job+Promo+2026&objective=OUTCOME_TRAFFIC&special_ad_categories=%5B%22NONE%22%5D&status=PAUSED
+    headers:
+      User-Agent:
+      - fbbizsdk-ruby-v26.0.2
+      Content-Type:
+      - application/x-www-form-urlencoded
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+  response:
+    status:
+      code: 400
+      message: Bad Request
+    headers:
+      Debug-Link:
+      - https://www.meta.com/debug/?mid=fbd81c80b60dcfceb52b1223b7744fea
+      Error-Mid:
+      - fbd81c80b60dcfceb52b1223b7744fea
+      Vary:
+      - Origin
+      Access-Control-Allow-Origin:
+      - "*"
+      Content-Type:
+      - application/json; charset=UTF-8
+      Www-Authenticate:
+      - OAuth "Facebook Platform" "invalid_token" "Invalid OAuth access token - Cannot
+        parse access token"
+      Strict-Transport-Security:
+      - max-age=15552000; preload
+      Pragma:
+      - no-cache
+      Cache-Control:
+      - no-store
+      Expires:
+      - Sat, 01 Jan 2000 00:00:00 GMT
+      X-Fb-Request-Id:
+      - AyjV8xpLd853kPfzNJj_eis
+      X-Fb-Trace-Id:
+      - FhlNcssTC+f
+      X-Fb-Rev:
+      - '1051594400'
+      X-Fb-Debug:
+      - FqnuUGpZRQcqlm9qeqcL1xyVQN/aQw+cQZwXOImYBfZGMkDmBcAG+pvMb5tJgbiyaBoDBzOj8X0aT5A8Sz9VYA==
+      Date:
+      - Sat, 24 Oct 2026 09:38:41 GMT
+      Proxy-Status:
+      - http_request_error; e_proxy="AcR7KU6zVx7pIUl4JEZKuocnoJgkbtw9zTFJEQ8uX7T6U1ObCsmwyvbh6ceMhQR8aCSpLykxr9QDxh3ofT-8";
+        e_fb_twtaskhandle="AcTSPBnHJ9OG05leqtRgnKnoCN7b9Mk8DLgrg4QsyR2r-DoSYKK8tRYd6N4oYxkoyjbwX1XkMUwRNiz25MTgfRbu6Dp7JvQVp9rfpMr9PC-pAzU";
+        e_upip="AcR6gO6L_leIeiB8518WPUP04yEGx97M9K0dnL7opQnAcXrQIWilPEGdH01qgKDTfxgUNCEDWfN110RQsQT8ZANYxHAay7_lSzJdu7s2ZpE";
+        e_fb_zone="AcTnMClycMd_ZS4rx3o83tKkIhbLvrGFCaf3rfBZxURhcZ1jN_stkKWDNFc94mMP";
+        e_clientaddr="AcSraB7GLjGImrwK4ndjq0BWMzSp2LN7IqY4pzwIA9GYl6XQ2WJ7-J4zFdjebo85F55tD64xOS-R_Dw5X9F-Qp9L9WLzRx3V3i_vbevh7KfbEVvluw";
+        e_fb_vipaddr="AcQEidiaM-QEW6kFst1-Gtp94MqKh4aSLKSK1sQlKGDVSYgyppqJ2_77SZo8Itkg4-3u9uubVGAjE9-a3WWOGBvyv11JI-8IDbpba70",
+        http_request_error; e_proxy="AcTC7iKI40Z9UJx7mUMiT7iuroqez6qXHtVWaysYpYzDnq7eOXCoQ-P9gcQUMJfwLDSws187Apyd6Ipz";
+        e_fb_twtaskhandle="AcTnWAAioKqqcx-OTG0y2rsoIqkKOmTv2VsK1Xk8r1U7PAUsDQf-iTHb1e-lF25aMNrafyk868gdaOduQj3-gmYcNfrSr-g0WM27";
+        e_upip="AcQW4D1JFcoPueqd25SnMyafadwjXGUM3D-d1P1bB_S3x7J9va3OkrDl087popsqSO5luHgVNEDvU25Pg3jd_Nnhh0gihiAtbGPCEYs";
+        e_fb_zone="AcRfnxzkLxRXqrWbrky3b6XiR4t1_N3oC7LcouZ1J1YPtAwVLjnD1N68D_hs9A";
+        e_clientaddr="AcSOgdGfsKeph9xzw97ERNTNShS6a5y3ZAz8v73AJJ3lb2bQl06ZzjA7KkeRPrTt9S9E6BjAKKOR5UL1M4E";
+        e_fb_vipaddr="AcQs9B_LnyxPsZjXgR4spta6_PrZapIhBtnxVXYLwTYoqxlgWgBJBD1_Gaj5aeCuSwSdgJ3u7fs"
+      X-Fb-Connection-Quality:
+      - GOOD; q=0.7, rtt=53, rtx=0, c=10, mss=1380, tbw=3632, tp=-1, tpl=-1, uplat=161,
+        ullat=0
+      Alt-Svc:
+      - h3=":443"; ma=86400
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '152'
+    body:
+      encoding: UTF-8
+      string: '{"error":{"message":"Invalid OAuth access token - Cannot parse access
+        token","type":"OAuthException","code":190,"fbtrace_id":"AyjV8xpLd853kPfzNJj_eis"}}'
+  recorded_at: Sat, 24 Oct 2026 09:38:41 GMT
+recorded_with: VCR 6.4.0

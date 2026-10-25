@@ -4,12 +4,14 @@ module Auth
   class RegisterService < ApplicationService
     step :validation
     step :check_resource
-    step :process
+    step :create_user
+    step :send_confirmation_email
 
     protected
 
     def validation(input)
-      normalized = input.dup.symbolize_keys
+      raw = input.respond_to?(:to_unsafe_h) ? input.to_unsafe_h : input
+      normalized = raw.dup.symbolize_keys
       normalized[:email] = normalized[:email].to_s.strip if normalized[:email].is_a?(String)
 
       result = Auth::RegisterContract.new.call(normalized)
@@ -29,7 +31,7 @@ module Auth
       end
     end
 
-    def process(input)
+    def create_user(input)
       token = SecureRandom.hex(32)
       user = User.new(
         email: input[:email],
@@ -40,11 +42,15 @@ module Auth
       )
 
       if user.save
-        UserMailer.confirmation_email(user).deliver_later
-        Success(user: user)
+        Success(input.merge(user: user))
       else
         Failure(user.errors.to_h)
       end
+    end
+
+    def send_confirmation_email(input)
+      UserMailer.confirmation_email(input[:user]).deliver_later
+      Success(user: input[:user])
     end
   end
 end
