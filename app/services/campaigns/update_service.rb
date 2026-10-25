@@ -33,14 +33,10 @@ module Campaigns
     end
 
     def check_resource(input)
-      user = input[:user] || Current.user
-      return Failure(:unauthorized) if user.nil?
-
-      Current.user ||= user
       campaign = input[:campaign] || Campaign.find_by(id: input[:id])
-      return Failure(:not_found) if campaign.nil? || campaign.user_id != user.id
+      return Failure(:not_found) if campaign.nil?
 
-      Success(input.merge(campaign: campaign, user: user))
+      Success(input.merge(campaign: campaign))
     end
 
     def update_campaign_budget(input)

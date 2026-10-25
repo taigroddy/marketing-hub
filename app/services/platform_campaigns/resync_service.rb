@@ -30,10 +30,6 @@ module PlatformCampaigns
     end
 
     def check_resource(input)
-      user = input[:user] || Current.user
-      return Failure(:unauthorized) if user.nil?
-
-      Current.user ||= user
       campaign = Campaign.find_by(id: input[:campaign_id])
       return Failure(campaign: [ "not found" ]) if campaign.nil?
 
@@ -46,7 +42,7 @@ module PlatformCampaigns
 
       return Failure(platform_campaigns: [ "not found" ]) if records.empty?
 
-      Success(input.merge(user: user, campaign: campaign, records: records.to_a))
+      Success(input.merge(campaign: campaign, records: records.to_a))
     end
 
     def detect_drift(input)

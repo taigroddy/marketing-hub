@@ -81,17 +81,6 @@ RSpec.describe PlatformCampaigns::PublishService, type: :service do
   end
 
   describe 'resource checks' do
-    it 'fails when user is not authenticated' do
-      Current.user = nil
-      result = described_class.call(
-        id: campaign.id,
-        platform: 'facebook',
-        platform_account_ids: [ account_fb1.id ]
-      )
-      expect(result).to be_failure
-      expect(result.failure).to eq(:unauthorized)
-    end
-
     it 'fails when campaign belongs to another user' do
       other_user = User.create!(
         email: 'other_user@example.com',

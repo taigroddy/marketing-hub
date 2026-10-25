@@ -46,10 +46,6 @@ module Api
             render json: { success: false, data: nil, errors: errors }, status: :unprocessable_content
           end
 
-          m.failure(:check_resource) do |_error|
-            render json: { success: false, data: nil, errors: "Unauthorized" }, status: :unauthorized
-          end
-
           m.failure do |error|
             render json: { success: false, data: nil, errors: error }, status: :unprocessable_content
           end

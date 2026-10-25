@@ -65,14 +65,6 @@ module Api
             end
           end
 
-          m.failure(:check_resource) do |_error|
-            if request.format.json?
-              render json: { success: false, data: nil, errors: "Unauthorized" }, status: :unauthorized
-            else
-              redirect_to dashboard_path, alert: "Kết nối thất bại: Unauthorized"
-            end
-          end
-
           m.failure do |error|
             error_msg = extract_error_message(error)
             if request.format.json?

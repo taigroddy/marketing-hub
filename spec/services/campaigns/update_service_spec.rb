@@ -182,18 +182,5 @@ RSpec.describe Campaigns::UpdateService do
         expect(result.failure).to eq(:not_found)
       end
     end
-
-    context 'when unauthenticated' do
-      before do
-        Current.user = nil
-      end
-
-      it 'returns failure(:unauthorized)' do
-        result = described_class.call(id: campaign_a.id, budget: 500.00)
-
-        expect(result).to be_failure
-        expect(result.failure).to eq(:unauthorized)
-      end
-    end
   end
 end

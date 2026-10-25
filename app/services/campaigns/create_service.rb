@@ -3,7 +3,6 @@
 module Campaigns
   class CreateService < ApplicationService
     step :validation
-    step :check_resource
     step :create_campaign_record
 
     protected
@@ -25,14 +24,6 @@ module Campaigns
       else
         Failure(result.errors.to_h)
       end
-    end
-
-    def check_resource(input)
-      user = input[:user] || Current.user
-      return Failure(:unauthorized) if user.nil?
-
-      Current.user ||= user
-      Success(input.merge(user: user))
     end
 
     def create_campaign_record(input)

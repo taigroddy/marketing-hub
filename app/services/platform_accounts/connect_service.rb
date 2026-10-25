@@ -3,7 +3,6 @@
 module PlatformAccounts
   class ConnectService < ApplicationService
     step :validation
-    step :check_resource
     step :save_platform_account
 
     protected
@@ -22,18 +21,10 @@ module PlatformAccounts
       end
     end
 
-    def check_resource(input)
-      user = input[:user] || Current.user
-      return Failure(:unauthorized) if user.nil?
-
-      Current.user ||= user
-      Success(input.merge(user: user))
-    end
-
     def save_platform_account(input)
       return Failure(error: "Google platform integration coming soon") if input[:platform].to_s.downcase == "google"
 
-      user = input[:user]
+      user = input[:user] || Current.user
       client = input[:client] || Clients::OAuth::FacebookClient.new
 
       exchange_result = client.exchange_code(code: input[:code], redirect_uri: input[:redirect_uri])
@@ -68,13 +59,13 @@ module PlatformAccounts
         end
       end
 
-      account_id ||= token_data[:account_id] || "act_#{user.id}"
+      account_id ||= token_data[:account_id] || "act_#{user&.id}"
       name ||= token_data[:name] || "Facebook Ad Account"
 
       account = PlatformAccount::Facebook.find_or_initialize_by(
-        user: user,
         account_id: account_id.to_s
       )
+      account.user = user if user
 
       account.assign_attributes(
         name: name,

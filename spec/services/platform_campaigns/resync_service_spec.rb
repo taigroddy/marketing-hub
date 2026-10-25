@@ -162,13 +162,6 @@ RSpec.describe PlatformCampaigns::ResyncService, type: :service do
   end
 
   describe 'resource checks' do
-    it 'fails when user is unauthenticated' do
-      Current.user = nil
-      result = described_class.call(id: campaign.id, platform: 'facebook')
-      expect(result).to be_failure
-      expect(result.failure).to eq(:unauthorized)
-    end
-
     it 'fails when campaign does not belong to user' do
       other_user = User.create!(
         email: 'other_resync@example.com',

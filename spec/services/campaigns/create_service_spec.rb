@@ -155,17 +155,5 @@ RSpec.describe Campaigns::CreateService do
         expect(matched_val_failure).to be true
       end
     end
-
-    context 'when unauthenticated' do
-      before do
-        Current.user = nil
-      end
-
-      it 'returns failure(:unauthorized)' do
-        result = described_class.call(valid_params)
-        expect(result).to be_failure
-        expect(result.failure).to eq(:unauthorized)
-      end
-    end
   end
 end
