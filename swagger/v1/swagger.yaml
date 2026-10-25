@@ -15,8 +15,41 @@ paths:
       responses:
         '201':
           description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      user:
+                        type: object
+                  errors:
+                    nullable: true
+                required:
+                - success
         '422':
           description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  data:
+                    nullable: true
+                  errors:
+                    description: Error details or validation hash
+                required:
+                - success
       requestBody:
         content:
           application/json:
@@ -45,12 +78,75 @@ paths:
       responses:
         '200':
           description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                      refresh_token:
+                        type: string
+                      user:
+                        type: object
+                  errors:
+                    nullable: true
+                required:
+                - success
         '401':
           description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  data:
+                    nullable: true
+                  errors:
+                    description: Error details or validation hash
+                required:
+                - success
         '403':
           description: Unconfirmed email address
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  data:
+                    nullable: true
+                  errors:
+                    description: Error details or validation hash
+                required:
+                - success
         '422':
           description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  data:
+                    nullable: true
+                  errors:
+                    description: Error details or validation hash
+                required:
+                - success
       requestBody:
         content:
           application/json:
@@ -75,10 +171,59 @@ paths:
       responses:
         '200':
           description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                      refresh_token:
+                        type: string
+                      user:
+                        type: object
+                  errors:
+                    nullable: true
+                required:
+                - success
         '401':
           description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  data:
+                    nullable: true
+                  errors:
+                    description: Error details or validation hash
+                required:
+                - success
         '422':
           description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  data:
+                    nullable: true
+                  errors:
+                    description: Error details or validation hash
+                required:
+                - success
       requestBody:
         content:
           application/json:
@@ -99,10 +244,55 @@ paths:
       responses:
         '200':
           description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                  errors:
+                    nullable: true
+                required:
+                - success
         '401':
           description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  data:
+                    nullable: true
+                  errors:
+                    description: Error details or validation hash
+                required:
+                - success
         '422':
           description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  data:
+                    nullable: true
+                  errors:
+                    description: Error details or validation hash
+                required:
+                - success
       requestBody:
         content:
           application/json:
@@ -129,8 +319,43 @@ paths:
       responses:
         '200':
           description: Email confirmed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                      user:
+                        type: object
+                      message:
+                        type: string
+                  errors:
+                    nullable: true
+                required:
+                - success
         '422':
           description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  data:
+                    nullable: true
+                  errors:
+                    description: Error details or validation hash
+                required:
+                - success
   "/api/v1/auth/me":
     get:
       summary: Get current authenticated user profile
@@ -141,8 +366,39 @@ paths:
       responses:
         '200':
           description: Profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        type: object
+                  errors:
+                    nullable: true
+                required:
+                - success
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  data:
+                    nullable: true
+                  errors:
+                    description: Error details or validation hash
+                required:
+                - success
   "/api/v1/campaigns":
     get:
       summary: List campaigns for current user
@@ -153,8 +409,41 @@ paths:
       responses:
         '200':
           description: Campaigns retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      campaigns:
+                        type: array
+                        items:
+                          type: object
+                  errors:
+                    nullable: true
+                required:
+                - success
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  data:
+                    nullable: true
+                  errors:
+                    description: Error details or validation hash
+                required:
+                - success
     post:
       summary: Create a new campaign
       tags:
@@ -165,10 +454,57 @@ paths:
       responses:
         '201':
           description: Campaign created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      campaign:
+                        type: object
+                      message:
+                        type: string
+                  errors:
+                    nullable: true
+                required:
+                - success
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  data:
+                    nullable: true
+                  errors:
+                    description: Error details or validation hash
+                required:
+                - success
         '422':
           description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  data:
+                    nullable: true
+                  errors:
+                    description: Error details or validation hash
+                required:
+                - success
       requestBody:
         content:
           application/json:
@@ -206,10 +542,55 @@ paths:
       responses:
         '200':
           description: Campaign details retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      campaign:
+                        type: object
+                  errors:
+                    nullable: true
+                required:
+                - success
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  data:
+                    nullable: true
+                  errors:
+                    description: Error details or validation hash
+                required:
+                - success
         '404':
           description: Campaign not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  data:
+                    nullable: true
+                  errors:
+                    description: Error details or validation hash
+                required:
+                - success
     patch:
       summary: Update campaign budget
       tags:
@@ -220,12 +601,73 @@ paths:
       responses:
         '200':
           description: Campaign budget updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      campaign:
+                        type: object
+                      message:
+                        type: string
+                  errors:
+                    nullable: true
+                required:
+                - success
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  data:
+                    nullable: true
+                  errors:
+                    description: Error details or validation hash
+                required:
+                - success
         '404':
           description: Campaign not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  data:
+                    nullable: true
+                  errors:
+                    description: Error details or validation hash
+                required:
+                - success
         '422':
           description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  data:
+                    nullable: true
+                  errors:
+                    description: Error details or validation hash
+                required:
+                - success
       requestBody:
         content:
           application/json:
@@ -277,10 +719,55 @@ paths:
       responses:
         '200':
           description: OAuth authorization URL generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      authorize_url:
+                        type: string
+                  errors:
+                    nullable: true
+                required:
+                - success
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  data:
+                    nullable: true
+                  errors:
+                    description: Error details or validation hash
+                required:
+                - success
         '501':
           description: Platform integration coming soon
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  data:
+                    nullable: true
+                  errors:
+                    description: Error details or validation hash
+                required:
+                - success
   "/v1/{platform}/oauth/callback":
     get:
       summary: OAuth callback to exchange authorization code for access token
@@ -308,10 +795,57 @@ paths:
       responses:
         '200':
           description: Platform account connected successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      platform_account:
+                        type: object
+                      message:
+                        type: string
+                  errors:
+                    nullable: true
+                required:
+                - success
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  data:
+                    nullable: true
+                  errors:
+                    description: Error details or validation hash
+                required:
+                - success
         '422':
           description: Validation or exchange error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  data:
+                    nullable: true
+                  errors:
+                    description: Error details or validation hash
+                required:
+                - success
   "/api/v1/platform_accounts":
     get:
       summary: List connected platform accounts
@@ -322,6 +856,25 @@ paths:
       responses:
         '200':
           description: List of connected platform accounts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      platform_accounts:
+                        type: array
+                        items:
+                          type: object
+                  errors:
+                    nullable: true
+                required:
+                - success
   "/v1/{platform}/campaigns/{id}/publish":
     parameters:
     - name: platform
@@ -350,14 +903,91 @@ paths:
       responses:
         '200':
           description: Campaign publish initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      platform_campaigns:
+                        type: array
+                        items:
+                          type: object
+                      message:
+                        type: string
+                  errors:
+                    nullable: true
+                required:
+                - success
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  data:
+                    nullable: true
+                  errors:
+                    description: Error details or validation hash
+                required:
+                - success
         '404':
           description: Campaign or platform account not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  data:
+                    nullable: true
+                  errors:
+                    description: Error details or validation hash
+                required:
+                - success
         '409':
           description: Already published for this campaign
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  data:
+                    nullable: true
+                  errors:
+                    description: Error details or validation hash
+                required:
+                - success
         '422':
           description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  data:
+                    nullable: true
+                  errors:
+                    description: Error details or validation hash
+                required:
+                - success
       requestBody:
         content:
           application/json:
@@ -400,12 +1030,75 @@ paths:
       responses:
         '200':
           description: Campaign resync initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      platform_campaigns:
+                        type: array
+                        items:
+                          type: object
+                      message:
+                        type: string
+                  errors:
+                    nullable: true
+                required:
+                - success
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  data:
+                    nullable: true
+                  errors:
+                    description: Error details or validation hash
+                required:
+                - success
         '404':
           description: Campaign or platform campaign not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  data:
+                    nullable: true
+                  errors:
+                    description: Error details or validation hash
+                required:
+                - success
         '422':
           description: No drift detected or resync error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  data:
+                    nullable: true
+                  errors:
+                    description: Error details or validation hash
+                required:
+                - success
       requestBody:
         content:
           application/json:

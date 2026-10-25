@@ -25,6 +25,19 @@ RSpec.describe "Api::V1::PlatformAccounts", type: :request do
       parameter name: :scope, in: :query, type: :string, required: false, description: "OAuth scope permissions"
 
       response 200, "OAuth authorization URL generated" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: true },
+                 data: {
+                   type: :object,
+                   properties: {
+                     authorize_url: { type: :string }
+                   }
+                 },
+                 errors: { nullable: true }
+               },
+               required: %w[success]
+
         let(:platform) { "facebook" }
         let(:state) { "xyz" }
         let(:redirect_uri) { nil }
@@ -33,22 +46,45 @@ RSpec.describe "Api::V1::PlatformAccounts", type: :request do
 
         run_test! do |response|
           json = JSON.parse(response.body)
-          expect(json["authorize_url"]).to include("https://www.facebook.com/v21.0/dialog/oauth")
-          expect(json["authorize_url"]).to include("client_id=")
+          expect(json["success"]).to be true
+          expect(json["errors"]).to be_nil
+          expect(json["data"]["authorize_url"]).to include("https://www.facebook.com/v21.0/dialog/oauth")
+          expect(json["data"]["authorize_url"]).to include("client_id=")
         end
       end
 
       response 401, "Unauthorized" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: false },
+                 data: { nullable: true },
+                 errors: { description: "Error details or validation hash" }
+               },
+               required: %w[success]
+
         let(:platform) { "facebook" }
         let(:state) { nil }
         let(:redirect_uri) { nil }
         let(:scope) { nil }
         let(:Authorization) { nil }
 
-        run_test!
+        run_test! do |response|
+          json = JSON.parse(response.body)
+          expect(json["success"]).to be false
+          expect(json["data"]).to be_nil
+          expect(json["errors"]).to eq("Unauthorized")
+        end
       end
 
       response 501, "Platform integration coming soon" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: false },
+                 data: { nullable: true },
+                 errors: { description: "Error details or validation hash" }
+               },
+               required: %w[success]
+
         let(:platform) { "google" }
         let(:state) { nil }
         let(:redirect_uri) { nil }
@@ -57,7 +93,9 @@ RSpec.describe "Api::V1::PlatformAccounts", type: :request do
 
         run_test! do |response|
           json = JSON.parse(response.body)
-          expect(json["error"]).to include("Google platform integration coming soon")
+          expect(json["success"]).to be false
+          expect(json["data"]).to be_nil
+          expect(json["errors"]).to include("Google platform integration coming soon")
         end
       end
     end
@@ -72,34 +110,73 @@ RSpec.describe "Api::V1::PlatformAccounts", type: :request do
       parameter name: :code, in: :query, type: :string, required: true, description: "OAuth authorization code"
 
       response 200, "Platform account connected successfully" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: true },
+                 data: {
+                   type: :object,
+                   properties: {
+                     platform_account: { type: :object },
+                     message: { type: :string }
+                   }
+                 },
+                 errors: { nullable: true }
+               },
+               required: %w[success]
+
         let(:platform) { "facebook" }
         let(:code) { "valid_auth_code" }
         let(:Authorization) { "Bearer #{jwt_token}" }
 
         run_test! do |response|
           json = JSON.parse(response.body)
-          expect(json["message"]).to eq("Platform account connected successfully")
-          expect(json["platform_account"]["account_id"]).to eq("1015012345678")
-          expect(json["platform_account"]).not_to have_key("access_token")
+          expect(json["success"]).to be true
+          expect(json["errors"]).to be_nil
+          expect(json["data"]["message"]).to eq("Platform account connected successfully")
+          expect(json["data"]["platform_account"]["account_id"]).to eq("1015012345678")
+          expect(json["data"]["platform_account"]).not_to have_key("access_token")
         end
       end
 
       response 401, "Unauthorized" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: false },
+                 data: { nullable: true },
+                 errors: { description: "Error details or validation hash" }
+               },
+               required: %w[success]
+
         let(:platform) { "facebook" }
         let(:code) { "some_code" }
         let(:Authorization) { nil }
 
-        run_test!
+        run_test! do |response|
+          json = JSON.parse(response.body)
+          expect(json["success"]).to be false
+          expect(json["data"]).to be_nil
+          expect(json["errors"]).to eq("Unauthorized")
+        end
       end
 
       response 422, "Validation or exchange error" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: false },
+                 data: { nullable: true },
+                 errors: { description: "Error details or validation hash" }
+               },
+               required: %w[success]
+
         let(:platform) { "facebook" }
         let(:code) { "" }
         let(:Authorization) { "Bearer #{jwt_token}" }
 
         run_test! do |response|
           json = JSON.parse(response.body)
-          expect(json["errors"] || json["error"]).to be_present
+          expect(json["success"]).to be false
+          expect(json["data"]).to be_nil
+          expect(json["errors"]).to be_present
         end
       end
     end
@@ -122,12 +199,30 @@ RSpec.describe "Api::V1::PlatformAccounts", type: :request do
       end
 
       response 200, "List of connected platform accounts" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: true },
+                 data: {
+                   type: :object,
+                   properties: {
+                     platform_accounts: {
+                       type: :array,
+                       items: { type: :object }
+                     }
+                   }
+                 },
+                 errors: { nullable: true }
+               },
+               required: %w[success]
+
         let(:Authorization) { "Bearer #{jwt_token}" }
 
         run_test! do |response|
           json = JSON.parse(response.body)
-          expect(json["platform_accounts"]).to be_an(Array)
-          expect(json["platform_accounts"].first["account_id"]).to eq("act_123")
+          expect(json["success"]).to be true
+          expect(json["errors"]).to be_nil
+          expect(json["data"]["platform_accounts"]).to be_an(Array)
+          expect(json["data"]["platform_accounts"].first["account_id"]).to eq("act_123")
         end
       end
     end
@@ -150,14 +245,18 @@ RSpec.describe "Api::V1::PlatformAccounts", type: :request do
       get "/v1/google/oauth/callback", params: { code: "google_code" }, headers: headers
       expect(response).to have_http_status(:unprocessable_content)
       json = JSON.parse(response.body)
-      expect(json["error"]).to include("Google platform integration coming soon")
+      expect(json["success"]).to be false
+      expect(json["data"]).to be_nil
+      expect(json["errors"]).to include("Google platform integration coming soon")
     end
 
     it "routes alias /oauth/:platform/callback to platform accounts callback" do
       get "/oauth/google/callback", params: { code: "google_code" }, headers: headers
       expect(response).to have_http_status(:unprocessable_content)
       json = JSON.parse(response.body)
-      expect(json["error"]).to include("Google platform integration coming soon")
+      expect(json["success"]).to be false
+      expect(json["data"]).to be_nil
+      expect(json["errors"]).to include("Google platform integration coming soon")
     end
 
     it "redirects to dashboard when callback is requested as HTML", vcr: { cassette_name: "facebook_oauth" } do

@@ -52,20 +52,51 @@ RSpec.describe "Api::V1::Campaigns", type: :request do
       produces "application/json"
 
       response 200, "Campaigns retrieved successfully" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: true },
+                 data: {
+                   type: :object,
+                   properties: {
+                     campaigns: {
+                       type: :array,
+                       items: { type: :object }
+                     }
+                   }
+                 },
+                 errors: { nullable: true }
+               },
+               required: %w[success]
+
         let(:Authorization) { "Bearer #{token_a}" }
 
         run_test! do |response|
           json = JSON.parse(response.body)
-          campaign_ids = json["campaigns"].map { |c| c["id"] }
+          expect(json["success"]).to be true
+          expect(json["errors"]).to be_nil
+          campaign_ids = json["data"]["campaigns"].map { |c| c["id"] }
           expect(campaign_ids).to include(campaign_a.id)
           expect(campaign_ids).not_to include(campaign_b.id)
         end
       end
 
       response 401, "Unauthorized" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: false },
+                 data: { nullable: true },
+                 errors: { description: "Error details or validation hash" }
+               },
+               required: %w[success]
+
         let(:Authorization) { nil }
 
-        run_test!
+        run_test! do |response|
+          json = JSON.parse(response.body)
+          expect(json["success"]).to be false
+          expect(json["data"]).to be_nil
+          expect(json["errors"]).to eq("Unauthorized")
+        end
       end
     end
 
@@ -85,6 +116,20 @@ RSpec.describe "Api::V1::Campaigns", type: :request do
       }
 
       response 201, "Campaign created successfully" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: true },
+                 data: {
+                   type: :object,
+                   properties: {
+                     campaign: { type: :object },
+                     message: { type: :string }
+                   }
+                 },
+                 errors: { nullable: true }
+               },
+               required: %w[success]
+
         let(:Authorization) { "Bearer #{token_a}" }
         let(:payload) do
           {
@@ -96,24 +141,49 @@ RSpec.describe "Api::V1::Campaigns", type: :request do
 
         run_test! do |response|
           json = JSON.parse(response.body)
-          expect(json["campaign"]["name"]).to eq("Brand Awareness 2026")
-          expect(json["campaign"]["user_id"]).to eq(user_a.id)
+          expect(json["success"]).to be true
+          expect(json["errors"]).to be_nil
+          expect(json["data"]["campaign"]["name"]).to eq("Brand Awareness 2026")
+          expect(json["data"]["campaign"]["user_id"]).to eq(user_a.id)
         end
       end
 
       response 401, "Unauthorized" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: false },
+                 data: { nullable: true },
+                 errors: { description: "Error details or validation hash" }
+               },
+               required: %w[success]
+
         let(:Authorization) { nil }
         let(:payload) { { name: "Test", objective: "OUTCOME_TRAFFIC", budget: 100 } }
 
-        run_test!
+        run_test! do |response|
+          json = JSON.parse(response.body)
+          expect(json["success"]).to be false
+          expect(json["data"]).to be_nil
+          expect(json["errors"]).to eq("Unauthorized")
+        end
       end
 
       response 422, "Validation error" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: false },
+                 data: { nullable: true },
+                 errors: { description: "Error details or validation hash" }
+               },
+               required: %w[success]
+
         let(:Authorization) { "Bearer #{token_a}" }
         let(:payload) { { name: "", objective: "", budget: -10 } }
 
         run_test! do |response|
           json = JSON.parse(response.body)
+          expect(json["success"]).to be false
+          expect(json["data"]).to be_nil
           expect(json["errors"]).to be_present
         end
       end
@@ -129,28 +199,69 @@ RSpec.describe "Api::V1::Campaigns", type: :request do
       produces "application/json"
 
       response 200, "Campaign details retrieved" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: true },
+                 data: {
+                   type: :object,
+                   properties: {
+                     campaign: { type: :object }
+                   }
+                 },
+                 errors: { nullable: true }
+               },
+               required: %w[success]
+
         let(:Authorization) { "Bearer #{token_a}" }
         let(:id) { campaign_a.id }
 
         run_test! do |response|
           json = JSON.parse(response.body)
-          expect(json["campaign"]["id"]).to eq(campaign_a.id)
-          expect(json["campaign"]["name"]).to eq("User A Camp")
+          expect(json["success"]).to be true
+          expect(json["errors"]).to be_nil
+          expect(json["data"]["campaign"]["id"]).to eq(campaign_a.id)
+          expect(json["data"]["campaign"]["name"]).to eq("User A Camp")
         end
       end
 
       response 401, "Unauthorized" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: false },
+                 data: { nullable: true },
+                 errors: { description: "Error details or validation hash" }
+               },
+               required: %w[success]
+
         let(:Authorization) { nil }
         let(:id) { campaign_a.id }
 
-        run_test!
+        run_test! do |response|
+          json = JSON.parse(response.body)
+          expect(json["success"]).to be false
+          expect(json["data"]).to be_nil
+          expect(json["errors"]).to eq("Unauthorized")
+        end
       end
 
       response 404, "Campaign not found" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: false },
+                 data: { nullable: true },
+                 errors: { description: "Error details or validation hash" }
+               },
+               required: %w[success]
+
         let(:Authorization) { "Bearer #{token_a}" }
         let(:id) { 999_999 }
 
-        run_test!
+        run_test! do |response|
+          json = JSON.parse(response.body)
+          expect(json["success"]).to be false
+          expect(json["data"]).to be_nil
+          expect(json["errors"]).to eq("Campaign not found")
+        end
       end
     end
 
@@ -168,40 +279,92 @@ RSpec.describe "Api::V1::Campaigns", type: :request do
       }
 
       response 200, "Campaign budget updated" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: true },
+                 data: {
+                   type: :object,
+                   properties: {
+                     campaign: { type: :object },
+                     message: { type: :string }
+                   }
+                 },
+                 errors: { nullable: true }
+               },
+               required: %w[success]
+
         let(:Authorization) { "Bearer #{token_a}" }
         let(:id) { campaign_a.id }
         let(:payload) { { budget: 3500.00 } }
 
         run_test! do |response|
           json = JSON.parse(response.body)
-          expect(BigDecimal(json["campaign"]["budget"].to_s)).to eq(3500.00)
+          expect(json["success"]).to be true
+          expect(json["errors"]).to be_nil
+          expect(BigDecimal(json["data"]["campaign"]["budget"].to_s)).to eq(3500.00)
           expect(campaign_a.reload.budget).to eq(3500.00)
         end
       end
 
       response 401, "Unauthorized" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: false },
+                 data: { nullable: true },
+                 errors: { description: "Error details or validation hash" }
+               },
+               required: %w[success]
+
         let(:Authorization) { nil }
         let(:id) { campaign_a.id }
         let(:payload) { { budget: 2000.00 } }
 
-        run_test!
+        run_test! do |response|
+          json = JSON.parse(response.body)
+          expect(json["success"]).to be false
+          expect(json["data"]).to be_nil
+          expect(json["errors"]).to eq("Unauthorized")
+        end
       end
 
       response 404, "Campaign not found" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: false },
+                 data: { nullable: true },
+                 errors: { description: "Error details or validation hash" }
+               },
+               required: %w[success]
+
         let(:Authorization) { "Bearer #{token_b}" }
         let(:id) { campaign_a.id }
         let(:payload) { { budget: 9999.00 } }
 
-        run_test!
+        run_test! do |response|
+          json = JSON.parse(response.body)
+          expect(json["success"]).to be false
+          expect(json["data"]).to be_nil
+          expect(json["errors"]).to eq("Campaign not found")
+        end
       end
 
       response 422, "Validation error" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: false },
+                 data: { nullable: true },
+                 errors: { description: "Error details or validation hash" }
+               },
+               required: %w[success]
+
         let(:Authorization) { "Bearer #{token_a}" }
         let(:id) { campaign_a.id }
         let(:payload) { { budget: -50 } }
 
         run_test! do |response|
           json = JSON.parse(response.body)
+          expect(json["success"]).to be false
+          expect(json["data"]).to be_nil
           expect(json["errors"]).to have_key("budget")
         end
       end
@@ -217,7 +380,9 @@ RSpec.describe "Api::V1::Campaigns", type: :request do
 
       expect(response).to have_http_status(:created)
       json = JSON.parse(response.body)
-      expect(json["campaign"]["user_id"]).to eq(user_a.id)
+      expect(json["success"]).to be true
+      expect(json["errors"]).to be_nil
+      expect(json["data"]["campaign"]["user_id"]).to eq(user_a.id)
     end
 
     it "ignores fields other than budget on update (budget-only editing)" do
@@ -231,6 +396,9 @@ RSpec.describe "Api::V1::Campaigns", type: :request do
             as: :json
 
       expect(response).to have_http_status(:ok)
+      json = JSON.parse(response.body)
+      expect(json["success"]).to be true
+      expect(json["errors"]).to be_nil
       campaign_a.reload
       expect(campaign_a.budget).to eq(4500.00)
       expect(campaign_a.name).to eq("User A Camp")
@@ -245,7 +413,9 @@ RSpec.describe "Api::V1::Campaigns", type: :request do
 
       expect(response).to have_http_status(:not_found)
       json = JSON.parse(response.body)
-      expect(json["error"]).to eq("Campaign not found")
+      expect(json["success"]).to be false
+      expect(json["data"]).to be_nil
+      expect(json["errors"]).to eq("Campaign not found")
     end
 
     it "returns 404 when updating another user campaign budget" do
@@ -256,7 +426,9 @@ RSpec.describe "Api::V1::Campaigns", type: :request do
 
       expect(response).to have_http_status(:not_found)
       json = JSON.parse(response.body)
-      expect(json["error"]).to eq("Campaign not found")
+      expect(json["success"]).to be false
+      expect(json["data"]).to be_nil
+      expect(json["errors"]).to eq("Campaign not found")
     end
   end
 end

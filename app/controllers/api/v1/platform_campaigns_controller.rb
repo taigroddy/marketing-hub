@@ -14,8 +14,12 @@ module Api
               redirect_to campaign_path(result[:campaign]), notice: "Chiến dịch đang được đồng bộ lên nền tảng."
             else
               render json: {
-                platform_campaigns: PlatformCampaignBlueprint.render_as_hash(result[:platform_campaigns]),
-                message: "Campaign publish initiated successfully"
+                success: true,
+                data: {
+                  platform_campaigns: PlatformCampaignBlueprint.render_as_hash(result[:platform_campaigns]),
+                  message: "Campaign publish initiated successfully"
+                },
+                errors: nil
               }, status: :ok
             end
           end
@@ -24,7 +28,7 @@ module Api
             if html_browser_request?
               redirect_to campaign_path(params[:id]), alert: "Đồng bộ thất bại: #{format_errors(errors)}"
             else
-              render json: { errors: errors }, status: :unprocessable_content
+              render json: { success: false, data: nil, errors: errors }, status: :unprocessable_content
             end
           end
 
@@ -33,7 +37,7 @@ module Api
           end
 
           m.failure do |error|
-            render json: { error: extract_error_message(error) }, status: :unprocessable_content
+            render json: { success: false, data: nil, errors: extract_error_message(error) }, status: :unprocessable_content
           end
         end
       end
@@ -45,8 +49,12 @@ module Api
               redirect_to campaign_path(result[:campaign]), notice: "Đã yêu cầu đồng bộ lại chiến dịch."
             else
               render json: {
-                platform_campaigns: PlatformCampaignBlueprint.render_as_hash(result[:platform_campaigns]),
-                message: "Campaign resync initiated successfully"
+                success: true,
+                data: {
+                  platform_campaigns: PlatformCampaignBlueprint.render_as_hash(result[:platform_campaigns]),
+                  message: "Campaign resync initiated successfully"
+                },
+                errors: nil
               }, status: :ok
             end
           end
@@ -55,7 +63,7 @@ module Api
             if html_browser_request?
               redirect_to dashboard_path, alert: "Đồng bộ lại thất bại: #{format_errors(errors)}"
             else
-              render json: { errors: errors }, status: :unprocessable_content
+              render json: { success: false, data: nil, errors: errors }, status: :unprocessable_content
             end
           end
 
@@ -68,17 +76,21 @@ module Api
             if html_browser_request?
               redirect_to campaign_path(params[:id]), alert: "Đồng bộ lại thất bại: #{error_msg}"
             else
-              render json: { error: error_msg }, status: :unprocessable_content
+              render json: { success: false, data: nil, errors: error_msg }, status: :unprocessable_content
             end
           end
 
           m.failure do |error|
-            render json: { error: extract_error_message(error) }, status: :unprocessable_content
+            render json: { success: false, data: nil, errors: extract_error_message(error) }, status: :unprocessable_content
           end
         end
       end
 
       private
+
+      def render_unauthorized(message = "Unauthorized")
+        render json: { success: false, data: nil, errors: message }, status: :unauthorized
+      end
 
       def render_publish_check_resource_failure(error)
         status, message = publish_check_resource_status_and_message(error)
@@ -90,7 +102,7 @@ module Api
             redirect_to campaign_path(params[:id]), alert: "Đồng bộ thất bại: #{message}"
           end
         else
-          render json: { error: message }, status: status
+          render json: { success: false, data: nil, errors: message }, status: status
         end
       end
 
@@ -120,7 +132,7 @@ module Api
             redirect_to campaign_path(params[:id]), alert: "Đồng bộ lại thất bại: #{message}"
           end
         else
-          render json: { error: message }, status: status
+          render json: { success: false, data: nil, errors: message }, status: status
         end
       end
 

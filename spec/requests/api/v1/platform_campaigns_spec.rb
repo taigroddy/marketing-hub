@@ -58,6 +58,23 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
       }
 
       response 200, "Campaign publish initiated" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: true },
+                 data: {
+                   type: :object,
+                   properties: {
+                     platform_campaigns: {
+                       type: :array,
+                       items: { type: :object }
+                     },
+                     message: { type: :string }
+                   }
+                 },
+                 errors: { nullable: true }
+               },
+               required: %w[success]
+
         let(:platform) { "facebook" }
         let(:id) { campaign.id }
         let(:Authorization) { "Bearer #{auth_token}" }
@@ -65,30 +82,66 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
 
         run_test! do |response|
           json = JSON.parse(response.body)
-          expect(json["platform_campaigns"]).to be_an(Array)
-          expect(json["platform_campaigns"].first["sync_status"]).to eq("pending")
+          expect(json["success"]).to be true
+          expect(json["errors"]).to be_nil
+          expect(json["data"]["platform_campaigns"]).to be_an(Array)
+          expect(json["data"]["platform_campaigns"].first["sync_status"]).to eq("pending")
         end
       end
 
       response 401, "Unauthorized" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: false },
+                 data: { nullable: true },
+                 errors: { description: "Error details or validation hash" }
+               },
+               required: %w[success]
+
         let(:platform) { "facebook" }
         let(:id) { campaign.id }
         let(:Authorization) { nil }
         let(:payload) { { platform_account_ids: [ account_fb.id ] } }
 
-        run_test!
+        run_test! do |response|
+          json = JSON.parse(response.body)
+          expect(json["success"]).to be false
+          expect(json["data"]).to be_nil
+          expect(json["errors"]).to eq("Unauthorized")
+        end
       end
 
       response 404, "Campaign or platform account not found" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: false },
+                 data: { nullable: true },
+                 errors: { description: "Error details or validation hash" }
+               },
+               required: %w[success]
+
         let(:platform) { "facebook" }
         let(:id) { 999_999 }
         let(:Authorization) { "Bearer #{auth_token}" }
         let(:payload) { { platform_account_ids: [ account_fb.id ] } }
 
-        run_test!
+        run_test! do |response|
+          json = JSON.parse(response.body)
+          expect(json["success"]).to be false
+          expect(json["data"]).to be_nil
+          expect(json["errors"]).to be_present
+        end
       end
 
       response 409, "Already published for this campaign" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: false },
+                 data: { nullable: true },
+                 errors: { description: "Error details or validation hash" }
+               },
+               required: %w[success]
+
         let(:platform) { "facebook" }
         let(:id) { campaign.id }
         let(:Authorization) { "Bearer #{auth_token}" }
@@ -102,10 +155,23 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
           )
         end
 
-        run_test!
+        run_test! do |response|
+          json = JSON.parse(response.body)
+          expect(json["success"]).to be false
+          expect(json["data"]).to be_nil
+          expect(json["errors"]).to be_present
+        end
       end
 
       response 422, "Validation error" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: false },
+                 data: { nullable: true },
+                 errors: { description: "Error details or validation hash" }
+               },
+               required: %w[success]
+
         let(:platform) { "facebook" }
         let(:id) { campaign.id }
         let(:Authorization) { "Bearer #{auth_token}" }
@@ -113,7 +179,9 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
 
         run_test! do |response|
           json = JSON.parse(response.body)
-          expect(json["errors"] || json["error"]).to be_present
+          expect(json["success"]).to be false
+          expect(json["data"]).to be_nil
+          expect(json["errors"]).to be_present
         end
       end
     end
@@ -146,6 +214,23 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
       end
 
       response 200, "Campaign resync initiated" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: true },
+                 data: {
+                   type: :object,
+                   properties: {
+                     platform_campaigns: {
+                       type: :array,
+                       items: { type: :object }
+                     },
+                     message: { type: :string }
+                   }
+                 },
+                 errors: { nullable: true }
+               },
+               required: %w[success]
+
         let(:platform) { "facebook" }
         let(:id) { campaign.id }
         let(:Authorization) { "Bearer #{auth_token}" }
@@ -157,29 +242,65 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
 
         run_test! do |response|
           json = JSON.parse(response.body)
-          expect(json["message"]).to include("Campaign resync initiated successfully")
+          expect(json["success"]).to be true
+          expect(json["errors"]).to be_nil
+          expect(json["data"]["message"]).to include("Campaign resync initiated successfully")
         end
       end
 
       response 401, "Unauthorized" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: false },
+                 data: { nullable: true },
+                 errors: { description: "Error details or validation hash" }
+               },
+               required: %w[success]
+
         let(:platform) { "facebook" }
         let(:id) { campaign.id }
         let(:Authorization) { nil }
         let(:payload) { { platform_campaign_id: platform_campaign.id } }
 
-        run_test!
+        run_test! do |response|
+          json = JSON.parse(response.body)
+          expect(json["success"]).to be false
+          expect(json["data"]).to be_nil
+          expect(json["errors"]).to eq("Unauthorized")
+        end
       end
 
       response 404, "Campaign or platform campaign not found" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: false },
+                 data: { nullable: true },
+                 errors: { description: "Error details or validation hash" }
+               },
+               required: %w[success]
+
         let(:platform) { "facebook" }
         let(:id) { 999_999 }
         let(:Authorization) { "Bearer #{auth_token}" }
         let(:payload) { { platform_campaign_id: platform_campaign.id } }
 
-        run_test!
+        run_test! do |response|
+          json = JSON.parse(response.body)
+          expect(json["success"]).to be false
+          expect(json["data"]).to be_nil
+          expect(json["errors"]).to be_present
+        end
       end
 
       response 422, "No drift detected or resync error" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: false },
+                 data: { nullable: true },
+                 errors: { description: "Error details or validation hash" }
+               },
+               required: %w[success]
+
         let(:platform) { "facebook" }
         let(:id) { campaign.id }
         let(:Authorization) { "Bearer #{auth_token}" }
@@ -192,7 +313,9 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
 
         run_test! do |response|
           json = JSON.parse(response.body)
-          expect(json["error"]).to include("No drift detected")
+          expect(json["success"]).to be false
+          expect(json["data"]).to be_nil
+          expect(json["errors"]).to include("No drift detected")
         end
       end
     end
@@ -240,7 +363,9 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
            as: :json
       expect(response).to have_http_status(:not_found)
       json = JSON.parse(response.body)
-      expect(json["error"] || json["errors"]).to be_present
+      expect(json["success"]).to be false
+      expect(json["data"]).to be_nil
+      expect(json["errors"]).to be_present
     end
 
     it "returns 404 when publishing with non-existent or foreign platform account" do
@@ -250,7 +375,9 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
            as: :json
       expect(response).to have_http_status(:not_found)
       json = JSON.parse(response.body)
-      expect(json["error"] || json["errors"]).to be_present
+      expect(json["success"]).to be false
+      expect(json["data"]).to be_nil
+      expect(json["errors"]).to be_present
     end
 
     it "returns 409 conflict when campaign is already published to platform account" do
@@ -266,7 +393,9 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
            as: :json
       expect(response).to have_http_status(:conflict)
       json = JSON.parse(response.body)
-      expect(json["error"] || json["errors"]).to be_present
+      expect(json["success"]).to be false
+      expect(json["data"]).to be_nil
+      expect(json["errors"]).to be_present
     end
 
     it "returns 422 when publishing to unsupported google platform" do
@@ -276,7 +405,9 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
            as: :json
       expect(response).to have_http_status(:unprocessable_content)
       json = JSON.parse(response.body)
-      expect(json["error"]).to include("Google platform integration coming soon")
+      expect(json["success"]).to be false
+      expect(json["data"]).to be_nil
+      expect(json["errors"]).to include("Google platform integration coming soon")
     end
 
     it "returns 404 when resyncing non-existent campaign" do
@@ -286,7 +417,9 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
            as: :json
       expect(response).to have_http_status(:not_found)
       json = JSON.parse(response.body)
-      expect(json["error"] || json["errors"]).to be_present
+      expect(json["success"]).to be false
+      expect(json["data"]).to be_nil
+      expect(json["errors"]).to be_present
     end
 
     it "returns 404 when resyncing non-existent platform campaign" do
@@ -296,13 +429,17 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
            as: :json
       expect(response).to have_http_status(:not_found)
       json = JSON.parse(response.body)
-      expect(json["error"] || json["errors"]).to be_present
+      expect(json["success"]).to be false
+      expect(json["data"]).to be_nil
+      expect(json["errors"]).to be_present
     end
 
     it "returns 422 on resync validation error" do
       post "/v1/facebook/campaigns/%20/resync", headers: headers, as: :json
       expect(response).to have_http_status(:unprocessable_content)
       json = JSON.parse(response.body)
+      expect(json["success"]).to be false
+      expect(json["data"]).to be_nil
       expect(json["errors"]).to be_present
     end
 

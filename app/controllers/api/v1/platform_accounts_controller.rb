@@ -9,7 +9,11 @@ module Api
 
       def index
         accounts = Current.user.platform_accounts.order(created_at: :desc)
-        render json: { platform_accounts: PlatformAccountBlueprint.render_as_hash(accounts) }, status: :ok
+        render json: {
+          success: true,
+          data: { platform_accounts: PlatformAccountBlueprint.render_as_hash(accounts) },
+          errors: nil
+        }, status: :ok
       end
 
       def authorize
@@ -27,12 +31,16 @@ module Api
           if html_browser_request?
             redirect_to auth_url, allow_other_host: true
           else
-            render json: { authorize_url: auth_url }, status: :ok
+            render json: {
+              success: true,
+              data: { authorize_url: auth_url },
+              errors: nil
+            }, status: :ok
           end
         when "google"
-          render json: { error: "Google platform integration coming soon" }, status: :not_implemented
+          render json: { success: false, data: nil, errors: "Google platform integration coming soon" }, status: :not_implemented
         else
-          render json: { error: "Unsupported platform: #{platform}" }, status: :bad_request
+          render json: { success: false, data: nil, errors: "Unsupported platform: #{platform}" }, status: :bad_request
         end
       end
 
@@ -43,8 +51,12 @@ module Api
               redirect_to dashboard_path, notice: "Tài khoản #{result[:platform_account].platform_name} đã được kết nối thành công."
             else
               render json: {
-                platform_account: PlatformAccountBlueprint.render_as_hash(result[:platform_account]),
-                message: "Platform account connected successfully"
+                success: true,
+                data: {
+                  platform_account: PlatformAccountBlueprint.render_as_hash(result[:platform_account]),
+                  message: "Platform account connected successfully"
+                },
+                errors: nil
               }, status: :ok
             end
           end
@@ -53,12 +65,12 @@ module Api
             if html_browser_request?
               redirect_to dashboard_path, alert: "Kết nối thất bại: #{errors.values.flatten.join(', ')}"
             else
-              render json: { errors: errors }, status: :unprocessable_content
+              render json: { success: false, data: nil, errors: errors }, status: :unprocessable_content
             end
           end
 
           m.failure(:check_resource) do |_error|
-            render json: { error: "Unauthorized" }, status: :unauthorized
+            render json: { success: false, data: nil, errors: "Unauthorized" }, status: :unauthorized
           end
 
           m.failure do |error|
@@ -66,13 +78,17 @@ module Api
             if html_browser_request?
               redirect_to dashboard_path, alert: "Kết nối thất bại: #{error_msg}"
             else
-              render json: { error: error_msg }, status: :unprocessable_content
+              render json: { success: false, data: nil, errors: error_msg }, status: :unprocessable_content
             end
           end
         end
       end
 
       private
+
+      def render_unauthorized(message = "Unauthorized")
+        render json: { success: false, data: nil, errors: message }, status: :unauthorized
+      end
 
       def extract_error_message(error)
         if error.is_a?(Hash)

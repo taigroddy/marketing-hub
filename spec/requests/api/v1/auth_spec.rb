@@ -19,6 +19,20 @@ RSpec.describe "Api::V1::Auth", type: :request do
       }
 
       response 201, "User registered successfully" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: true },
+                 data: {
+                   type: :object,
+                   properties: {
+                     message: { type: :string },
+                     user: { type: :object }
+                   }
+                 },
+                 errors: { nullable: true }
+               },
+               required: %w[success]
+
         let(:payload) do
           {
             email: "api-user@example.com",
@@ -29,14 +43,24 @@ RSpec.describe "Api::V1::Auth", type: :request do
 
         run_test! do |response|
           json = JSON.parse(response.body)
-          expect(json["message"]).to include("Registration successful")
-          expect(json["user"]["email"]).to eq("api-user@example.com")
-          expect(json["user"]).not_to have_key("password_digest")
-          expect(json["user"]).not_to have_key("confirmation_token")
+          expect(json["success"]).to be true
+          expect(json["errors"]).to be_nil
+          expect(json["data"]["message"]).to include("Registration successful")
+          expect(json["data"]["user"]["email"]).to eq("api-user@example.com")
+          expect(json["data"]["user"]).not_to have_key("password_digest")
+          expect(json["data"]["user"]).not_to have_key("confirmation_token")
         end
       end
 
       response 422, "Validation error" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: false },
+                 data: { nullable: true },
+                 errors: { description: "Error details or validation hash" }
+               },
+               required: %w[success]
+
         let(:payload) do
           {
             email: "invalid-email",
@@ -47,6 +71,8 @@ RSpec.describe "Api::V1::Auth", type: :request do
 
         run_test! do |response|
           json = JSON.parse(response.body)
+          expect(json["success"]).to be false
+          expect(json["data"]).to be_nil
           expect(json["errors"]).to be_present
         end
       end
@@ -67,6 +93,8 @@ RSpec.describe "Api::V1::Auth", type: :request do
       post "/api/v1/auth/register", params: valid_attributes, as: :json
       expect(response).to have_http_status(:unprocessable_content)
       json = JSON.parse(response.body)
+      expect(json["success"]).to be false
+      expect(json["data"]).to be_nil
       expect(json["errors"]["email"]).to include("has already been taken")
     end
   end
@@ -94,29 +122,64 @@ RSpec.describe "Api::V1::Auth", type: :request do
       end
 
       response 200, "Login successful" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: true },
+                 data: {
+                   type: :object,
+                   properties: {
+                     token: { type: :string },
+                     refresh_token: { type: :string },
+                     user: { type: :object }
+                   }
+                 },
+                 errors: { nullable: true }
+               },
+               required: %w[success]
+
         let(:payload) { { email: "login-user@example.com", password: "Password123!" } }
 
         run_test! do |response|
           json = JSON.parse(response.body)
-          expect(json["token"]).to be_present
-          expect(json["refresh_token"]).to be_present
-          expect(json["user"]["id"]).to eq(user.id)
-          expect(json["user"]["email"]).to eq("login-user@example.com")
-          decoded = Authenticable.decode_jwt(json["token"])
+          expect(json["success"]).to be true
+          expect(json["errors"]).to be_nil
+          expect(json["data"]["token"]).to be_present
+          expect(json["data"]["refresh_token"]).to be_present
+          expect(json["data"]["user"]["id"]).to eq(user.id)
+          expect(json["data"]["user"]["email"]).to eq("login-user@example.com")
+          decoded = Authenticable.decode_jwt(json["data"]["token"])
           expect(decoded[:user_id]).to eq(user.id)
         end
       end
 
       response 401, "Invalid credentials" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: false },
+                 data: { nullable: true },
+                 errors: { description: "Error details or validation hash" }
+               },
+               required: %w[success]
+
         let(:payload) { { email: "login-user@example.com", password: "WrongPassword!" } }
 
         run_test! do |response|
           json = JSON.parse(response.body)
-          expect(json["error"]).to include("Invalid email or password")
+          expect(json["success"]).to be false
+          expect(json["data"]).to be_nil
+          expect(json["errors"]).to include("Invalid email or password")
         end
       end
 
       response 403, "Unconfirmed email address" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: false },
+                 data: { nullable: true },
+                 errors: { description: "Error details or validation hash" }
+               },
+               required: %w[success]
+
         let!(:unconfirmed_user) do
           User.create!(
             email: "unconfirmed@example.com",
@@ -128,15 +191,27 @@ RSpec.describe "Api::V1::Auth", type: :request do
 
         run_test! do |response|
           json = JSON.parse(response.body)
-          expect(json["error"]).to include("confirm your email")
+          expect(json["success"]).to be false
+          expect(json["data"]).to be_nil
+          expect(json["errors"]).to include("confirm your email")
         end
       end
 
       response 422, "Validation error" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: false },
+                 data: { nullable: true },
+                 errors: { description: "Error details or validation hash" }
+               },
+               required: %w[success]
+
         let(:payload) { { email: "invalid-email", password: "" } }
 
         run_test! do |response|
           json = JSON.parse(response.body)
+          expect(json["success"]).to be false
+          expect(json["data"]).to be_nil
           expect(json["errors"]).to be_present
         end
       end
@@ -167,31 +242,68 @@ RSpec.describe "Api::V1::Auth", type: :request do
       let(:raw_token) { token_pair.last }
 
       response 200, "Token refreshed successfully" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: true },
+                 data: {
+                   type: :object,
+                   properties: {
+                     token: { type: :string },
+                     refresh_token: { type: :string },
+                     user: { type: :object }
+                   }
+                 },
+                 errors: { nullable: true }
+               },
+               required: %w[success]
+
         let(:payload) { { refresh_token: raw_token } }
 
         run_test! do |response|
           json = JSON.parse(response.body)
-          expect(json["token"]).to be_present
-          expect(json["refresh_token"]).to be_present
-          expect(json["refresh_token"]).not_to eq(raw_token)
-          expect(json["user"]["id"]).to eq(user.id)
+          expect(json["success"]).to be true
+          expect(json["errors"]).to be_nil
+          expect(json["data"]["token"]).to be_present
+          expect(json["data"]["refresh_token"]).to be_present
+          expect(json["data"]["refresh_token"]).not_to eq(raw_token)
+          expect(json["data"]["user"]["id"]).to eq(user.id)
         end
       end
 
       response 401, "Invalid or expired refresh token" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: false },
+                 data: { nullable: true },
+                 errors: { description: "Error details or validation hash" }
+               },
+               required: %w[success]
+
         let(:payload) { { refresh_token: "invalid-token" } }
 
         run_test! do |response|
           json = JSON.parse(response.body)
-          expect(json["error"]).to include("Invalid or expired")
+          expect(json["success"]).to be false
+          expect(json["data"]).to be_nil
+          expect(json["errors"]).to include("Invalid or expired")
         end
       end
 
       response 422, "Validation error" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: false },
+                 data: { nullable: true },
+                 errors: { description: "Error details or validation hash" }
+               },
+               required: %w[success]
+
         let(:payload) { { refresh_token: "" } }
 
         run_test! do |response|
           json = JSON.parse(response.body)
+          expect(json["success"]).to be false
+          expect(json["data"]).to be_nil
           expect(json["errors"]).to be_present
         end
       end
@@ -222,29 +334,64 @@ RSpec.describe "Api::V1::Auth", type: :request do
       let(:raw_token) { token_pair.last }
 
       response 200, "Logged out successfully" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: true },
+                 data: {
+                   type: :object,
+                   properties: {
+                     message: { type: :string }
+                   }
+                 },
+                 errors: { nullable: true }
+               },
+               required: %w[success]
+
         let(:payload) { { refresh_token: raw_token } }
 
         run_test! do |response|
           json = JSON.parse(response.body)
-          expect(json["message"]).to eq("Logged out successfully.")
+          expect(json["success"]).to be true
+          expect(json["errors"]).to be_nil
+          expect(json["data"]["message"]).to eq("Logged out successfully.")
           expect(token_pair.first.reload.revoked?).to be true
         end
       end
 
       response 401, "Invalid or expired refresh token" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: false },
+                 data: { nullable: true },
+                 errors: { description: "Error details or validation hash" }
+               },
+               required: %w[success]
+
         let(:payload) { { refresh_token: "nonexistent-token" } }
 
         run_test! do |response|
           json = JSON.parse(response.body)
-          expect(json["error"]).to include("Invalid or expired")
+          expect(json["success"]).to be false
+          expect(json["data"]).to be_nil
+          expect(json["errors"]).to include("Invalid or expired")
         end
       end
 
       response 422, "Validation error" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: false },
+                 data: { nullable: true },
+                 errors: { description: "Error details or validation hash" }
+               },
+               required: %w[success]
+
         let(:payload) { { refresh_token: "" } }
 
         run_test! do |response|
           json = JSON.parse(response.body)
+          expect(json["success"]).to be false
+          expect(json["data"]).to be_nil
           expect(json["errors"]).to be_present
         end
       end
@@ -267,23 +414,50 @@ RSpec.describe "Api::V1::Auth", type: :request do
       end
 
       response 200, "Email confirmed successfully" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: true },
+                 data: {
+                   type: :object,
+                   properties: {
+                     token: { type: :string },
+                     user: { type: :object },
+                     message: { type: :string }
+                   }
+                 },
+                 errors: { nullable: true }
+               },
+               required: %w[success]
+
         let(:token) { "secret-token-123" }
 
         run_test! do |response|
           json = JSON.parse(response.body)
-          expect(json["token"]).to be_present
-          expect(json["message"]).to include("Email confirmed successfully")
+          expect(json["success"]).to be true
+          expect(json["errors"]).to be_nil
+          expect(json["data"]["token"]).to be_present
+          expect(json["data"]["message"]).to include("Email confirmed successfully")
           expect(user.reload.confirmed?).to be true
           expect(user.confirmation_token).to be_nil
         end
       end
 
       response 422, "Invalid or expired token" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: false },
+                 data: { nullable: true },
+                 errors: { description: "Error details or validation hash" }
+               },
+               required: %w[success]
+
         let(:token) { "wrong-token" }
 
         run_test! do |response|
           json = JSON.parse(response.body)
-          expect(json["error"]).to include("Invalid or expired")
+          expect(json["success"]).to be false
+          expect(json["data"]).to be_nil
+          expect(json["errors"]).to include("Invalid or expired")
         end
       end
     end
@@ -304,21 +478,46 @@ RSpec.describe "Api::V1::Auth", type: :request do
       end
 
       response 200, "Profile retrieved successfully" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: true },
+                 data: {
+                   type: :object,
+                   properties: {
+                     user: { type: :object }
+                   }
+                 },
+                 errors: { nullable: true }
+               },
+               required: %w[success]
+
         let(:Authorization) { "Bearer #{Authenticable.encode_jwt({ user_id: user.id })}" }
 
         run_test! do |response|
           json = JSON.parse(response.body)
-          expect(json["user"]["id"]).to eq(user.id)
-          expect(json["user"]["email"]).to eq("me-test@example.com")
+          expect(json["success"]).to be true
+          expect(json["errors"]).to be_nil
+          expect(json["data"]["user"]["id"]).to eq(user.id)
+          expect(json["data"]["user"]["email"]).to eq("me-test@example.com")
         end
       end
 
       response 401, "Unauthorized" do
+        schema type: :object,
+               properties: {
+                 success: { type: :boolean, example: false },
+                 data: { nullable: true },
+                 errors: { description: "Error details or validation hash" }
+               },
+               required: %w[success]
+
         let(:Authorization) { "Bearer invalid_token" }
 
         run_test! do |response|
           json = JSON.parse(response.body)
-          expect(json["error"]).to eq("Unauthorized")
+          expect(json["success"]).to be false
+          expect(json["data"]).to be_nil
+          expect(json["errors"]).to eq("Unauthorized")
         end
       end
     end
@@ -340,7 +539,7 @@ RSpec.describe "Api::V1::Auth", type: :request do
            headers: { "User-Agent" => "Device-A-iOS" },
            as: :json
       expect(response).to have_http_status(:ok)
-      device_a_tokens = JSON.parse(response.body)
+      device_a_tokens = JSON.parse(response.body)["data"]
       token_a = device_a_tokens["token"]
       refresh_a = device_a_tokens["refresh_token"]
 
@@ -350,7 +549,7 @@ RSpec.describe "Api::V1::Auth", type: :request do
            headers: { "User-Agent" => "Device-B-Android" },
            as: :json
       expect(response).to have_http_status(:ok)
-      device_b_tokens = JSON.parse(response.body)
+      device_b_tokens = JSON.parse(response.body)["data"]
       token_b = device_b_tokens["token"]
       refresh_b = device_b_tokens["refresh_token"]
 
@@ -359,9 +558,15 @@ RSpec.describe "Api::V1::Auth", type: :request do
       # 3. Both devices can access /me
       get "/api/v1/auth/me", headers: { "Authorization" => "Bearer #{token_a}" }
       expect(response).to have_http_status(:ok)
+      me_body = JSON.parse(response.body)
+      expect(me_body["success"]).to be true
+      expect(me_body["data"]["user"]["id"]).to eq(user.id)
 
       get "/api/v1/auth/me", headers: { "Authorization" => "Bearer #{token_b}" }
       expect(response).to have_http_status(:ok)
+      me_body = JSON.parse(response.body)
+      expect(me_body["success"]).to be true
+      expect(me_body["data"]["user"]["id"]).to eq(user.id)
 
       # 4. Device A refreshes token
       post "/api/v1/auth/refresh",
@@ -369,7 +574,7 @@ RSpec.describe "Api::V1::Auth", type: :request do
            headers: { "User-Agent" => "Device-A-iOS" },
            as: :json
       expect(response).to have_http_status(:ok)
-      refreshed_a = JSON.parse(response.body)
+      refreshed_a = JSON.parse(response.body)["data"]
       new_token_a = refreshed_a["token"]
       new_refresh_a = refreshed_a["refresh_token"]
       expect(new_refresh_a).not_to eq(refresh_a)
@@ -383,7 +588,7 @@ RSpec.describe "Api::V1::Auth", type: :request do
            headers: { "User-Agent" => "Device-B-Android" },
            as: :json
       expect(response).to have_http_status(:ok)
-      refreshed_b = JSON.parse(response.body)
+      refreshed_b = JSON.parse(response.body)["data"]
       new_token_b = refreshed_b["token"]
       new_refresh_b = refreshed_b["refresh_token"]
 
@@ -398,6 +603,9 @@ RSpec.describe "Api::V1::Auth", type: :request do
            params: { refresh_token: new_refresh_a },
            as: :json
       expect(response).to have_http_status(:unauthorized)
+      unauth_res = JSON.parse(response.body)
+      expect(unauth_res["success"]).to be false
+      expect(unauth_res["errors"]).to be_present
 
       # 8. Device B is still completely active and can access /me and refresh
       get "/api/v1/auth/me", headers: { "Authorization" => "Bearer #{new_token_b}" }
@@ -417,7 +625,7 @@ RSpec.describe "Api::V1::Auth", type: :request do
            headers: { "User-Agent" => long_ua },
            as: :json
       expect(response).to have_http_status(:ok)
-      data = JSON.parse(response.body)
+      data = JSON.parse(response.body)["data"]
 
       decoded = Authenticable.decode_jwt(data["token"])
       token_record = UserToken.find(decoded[:user_token_id])

@@ -9,15 +9,23 @@ module Api
 
       def index
         campaigns = Current.user.campaigns.order(created_at: :desc)
-        render json: { campaigns: CampaignBlueprint.render_as_hash(campaigns) }, status: :ok
+        render json: {
+          success: true,
+          data: { campaigns: CampaignBlueprint.render_as_hash(campaigns) },
+          errors: nil
+        }, status: :ok
       end
 
       def show
         campaign = Current.user.campaigns.find_by(id: params[:id])
         if campaign
-          render json: { campaign: CampaignBlueprint.render_as_hash(campaign) }, status: :ok
+          render json: {
+            success: true,
+            data: { campaign: CampaignBlueprint.render_as_hash(campaign) },
+            errors: nil
+          }, status: :ok
         else
-          render json: { error: "Campaign not found" }, status: :not_found
+          render json: { success: false, data: nil, errors: "Campaign not found" }, status: :not_found
         end
       end
 
@@ -25,21 +33,25 @@ module Api
         Campaigns::CreateService.call(full_request_params) do |m|
           m.success do |result|
             render json: {
-              campaign: CampaignBlueprint.render_as_hash(result[:campaign]),
-              message: "Campaign created successfully"
+              success: true,
+              data: {
+                campaign: CampaignBlueprint.render_as_hash(result[:campaign]),
+                message: "Campaign created successfully"
+              },
+              errors: nil
             }, status: :created
           end
 
           m.failure(:validation) do |errors|
-            render json: { errors: errors }, status: :unprocessable_content
+            render json: { success: false, data: nil, errors: errors }, status: :unprocessable_content
           end
 
           m.failure(:check_resource) do |_error|
-            render json: { error: "Unauthorized" }, status: :unauthorized
+            render json: { success: false, data: nil, errors: "Unauthorized" }, status: :unauthorized
           end
 
           m.failure do |error|
-            render json: { errors: error }, status: :unprocessable_content
+            render json: { success: false, data: nil, errors: error }, status: :unprocessable_content
           end
         end
       end
@@ -48,23 +60,33 @@ module Api
         Campaigns::UpdateService.call(full_request_params) do |m|
           m.success do |result|
             render json: {
-              campaign: CampaignBlueprint.render_as_hash(result[:campaign]),
-              message: "Campaign budget updated successfully"
+              success: true,
+              data: {
+                campaign: CampaignBlueprint.render_as_hash(result[:campaign]),
+                message: "Campaign budget updated successfully"
+              },
+              errors: nil
             }, status: :ok
           end
 
           m.failure(:validation) do |errors|
-            render json: { errors: errors }, status: :unprocessable_content
+            render json: { success: false, data: nil, errors: errors }, status: :unprocessable_content
           end
 
           m.failure(:check_resource) do |_error|
-            render json: { error: "Campaign not found" }, status: :not_found
+            render json: { success: false, data: nil, errors: "Campaign not found" }, status: :not_found
           end
 
           m.failure do |error|
-            render json: { errors: error }, status: :unprocessable_content
+            render json: { success: false, data: nil, errors: error }, status: :unprocessable_content
           end
         end
+      end
+
+      private
+
+      def render_unauthorized(message = "Unauthorized")
+        render json: { success: false, data: nil, errors: message }, status: :unauthorized
       end
     end
   end

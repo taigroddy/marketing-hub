@@ -11,17 +11,21 @@ module Api
         Auth::RegisterService.call(full_request_params) do |m|
           m.success do |data|
             render json: {
-              message: "Registration successful. Please check your email to confirm your account.",
-              user: UserBlueprint.render_as_hash(data[:user])
+              success: true,
+              data: {
+                message: "Registration successful. Please check your email to confirm your account.",
+                user: UserBlueprint.render_as_hash(data[:user])
+              },
+              errors: nil
             }, status: :created
           end
 
           m.failure(:validation) do |errors|
-            render json: { errors: errors }, status: :unprocessable_entity
+            render json: { success: false, data: nil, errors: errors }, status: :unprocessable_entity
           end
 
           m.failure do |error|
-            render json: { errors: error }, status: :unprocessable_entity
+            render json: { success: false, data: nil, errors: error }, status: :unprocessable_entity
           end
         end
       end
@@ -31,14 +35,18 @@ module Api
         Auth::LoginService.call(params_with_device) do |m|
           m.success do |data|
             render json: {
-              token: data[:token],
-              refresh_token: data[:refresh_token],
-              user: UserBlueprint.render_as_hash(data[:user])
+              success: true,
+              data: {
+                token: data[:token],
+                refresh_token: data[:refresh_token],
+                user: UserBlueprint.render_as_hash(data[:user])
+              },
+              errors: nil
             }, status: :ok
           end
 
           m.failure(:validation) do |errors|
-            render json: { errors: errors }, status: :unprocessable_entity
+            render json: { success: false, data: nil, errors: errors }, status: :unprocessable_entity
           end
 
           m.failure do |error|
@@ -52,18 +60,22 @@ module Api
         Auth::RefreshTokenService.call(params_with_device) do |m|
           m.success do |data|
             render json: {
-              token: data[:token],
-              refresh_token: data[:refresh_token],
-              user: UserBlueprint.render_as_hash(data[:user])
+              success: true,
+              data: {
+                token: data[:token],
+                refresh_token: data[:refresh_token],
+                user: UserBlueprint.render_as_hash(data[:user])
+              },
+              errors: nil
             }, status: :ok
           end
 
           m.failure(:validation) do |errors|
-            render json: { errors: errors }, status: :unprocessable_entity
+            render json: { success: false, data: nil, errors: errors }, status: :unprocessable_entity
           end
 
           m.failure do |_error|
-            render json: { error: "Invalid or expired refresh token." }, status: :unauthorized
+            render json: { success: false, data: nil, errors: "Invalid or expired refresh token." }, status: :unauthorized
           end
         end
       end
@@ -71,15 +83,19 @@ module Api
       def logout
         Auth::LogoutService.call(full_request_params) do |m|
           m.success do |_data|
-            render json: { message: "Logged out successfully." }, status: :ok
+            render json: {
+              success: true,
+              data: { message: "Logged out successfully." },
+              errors: nil
+            }, status: :ok
           end
 
           m.failure(:validation) do |errors|
-            render json: { errors: errors }, status: :unprocessable_entity
+            render json: { success: false, data: nil, errors: errors }, status: :unprocessable_entity
           end
 
           m.failure do |_error|
-            render json: { error: "Invalid or expired refresh token." }, status: :unauthorized
+            render json: { success: false, data: nil, errors: "Invalid or expired refresh token." }, status: :unauthorized
           end
         end
       end
@@ -88,24 +104,32 @@ module Api
         Auth::ConfirmEmailService.call(full_request_params) do |m|
           m.success do |data|
             render json: {
-              token: data[:token],
-              user: UserBlueprint.render_as_hash(data[:user]),
-              message: "Email confirmed successfully."
+              success: true,
+              data: {
+                token: data[:token],
+                user: UserBlueprint.render_as_hash(data[:user]),
+                message: "Email confirmed successfully."
+              },
+              errors: nil
             }, status: :ok
           end
 
           m.failure(:validation) do |_errors|
-            render json: { error: "Invalid or expired confirmation token." }, status: :unprocessable_entity
+            render json: { success: false, data: nil, errors: "Invalid or expired confirmation token." }, status: :unprocessable_entity
           end
 
           m.failure do |_error|
-            render json: { error: "Invalid or expired confirmation token." }, status: :unprocessable_entity
+            render json: { success: false, data: nil, errors: "Invalid or expired confirmation token." }, status: :unprocessable_entity
           end
         end
       end
 
       def me
-        render json: { user: UserBlueprint.render_as_hash(current_user) }, status: :ok
+        render json: {
+          success: true,
+          data: { user: UserBlueprint.render_as_hash(current_user) },
+          errors: nil
+        }, status: :ok
       end
 
       private
@@ -113,12 +137,16 @@ module Api
       def handle_login_failure(failure)
         case failure
         when :unconfirmed_email
-          render json: { error: "Please confirm your email address before logging in." }, status: :forbidden
+          render json: { success: false, data: nil, errors: "Please confirm your email address before logging in." }, status: :forbidden
         when :invalid_credentials
-          render json: { error: "Invalid email or password." }, status: :unauthorized
+          render json: { success: false, data: nil, errors: "Invalid email or password." }, status: :unauthorized
         else
-          render json: { errors: failure }, status: :unprocessable_entity
+          render json: { success: false, data: nil, errors: failure }, status: :unprocessable_entity
         end
+      end
+
+      def render_unauthorized(message = "Unauthorized")
+        render json: { success: false, data: nil, errors: message }, status: :unauthorized
       end
     end
   end
