@@ -40,12 +40,13 @@ module PlatformCampaigns
       user = input[:user] || Current.user
       return Failure(:unauthorized) if user.nil?
 
-      campaign = user.campaigns.find_by(id: input[:campaign_id])
+      Current.user ||= user
+      campaign = Campaign.find_by(id: input[:campaign_id])
       return Failure(campaign: [ "not found" ]) if campaign.nil?
 
       return Failure(error: "Google platform integration coming soon") if input[:platform] == "google"
 
-      accounts = user.platform_accounts.where(id: input[:platform_account_ids]).to_a
+      accounts = PlatformAccount.where(id: input[:platform_account_ids]).to_a
       if accounts.size != input[:platform_account_ids].size || accounts.any? { |a| a.platform_name.downcase != input[:platform] }
         return Failure(platform_accounts: [ "invalid or not found" ])
       end

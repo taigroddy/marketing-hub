@@ -26,6 +26,7 @@ module PlatformAccounts
       user = input[:user] || Current.user
       return Failure(:unauthorized) if user.nil?
 
+      Current.user ||= user
       Success(input.merge(user: user))
     end
 

@@ -31,16 +31,18 @@ module Campaigns
       user = input[:user] || Current.user
       return Failure(:unauthorized) if user.nil?
 
+      Current.user ||= user
       Success(input.merge(user: user))
     end
 
     def create_campaign_record(input)
-      campaign = input[:user].campaigns.build(
+      campaign = Campaign.new(
         name: input[:name],
         objective: input[:objective],
         budget: input[:budget],
         status: input[:status].presence || "draft"
       )
+      campaign.user = input[:user] if input[:user]
 
       if campaign.save
         Success(campaign: campaign)

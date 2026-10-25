@@ -8,7 +8,7 @@ module Api
       before_action :authenticate_user!
 
       def index
-        accounts = Current.user.platform_accounts.order(created_at: :desc)
+        accounts = PlatformAccount.order(created_at: :desc)
         render json: {
           success: true,
           data: { platform_accounts: PlatformAccountBlueprint.render_as_hash(accounts) },

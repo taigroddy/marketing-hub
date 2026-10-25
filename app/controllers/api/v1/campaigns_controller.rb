@@ -8,7 +8,7 @@ module Api
       before_action :authenticate_user!
 
       def index
-        campaigns = Current.user.campaigns.order(created_at: :desc)
+        campaigns = Campaign.order(created_at: :desc)
         render json: {
           success: true,
           data: { campaigns: CampaignBlueprint.render_as_hash(campaigns) },
@@ -17,7 +17,7 @@ module Api
       end
 
       def show
-        campaign = Current.user.campaigns.find_by(id: params[:id])
+        campaign = Campaign.find_by(id: params[:id])
         if campaign
           render json: {
             success: true,

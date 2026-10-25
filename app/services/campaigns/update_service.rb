@@ -36,7 +36,8 @@ module Campaigns
       user = input[:user] || Current.user
       return Failure(:unauthorized) if user.nil?
 
-      campaign = input[:campaign] || user.campaigns.find_by(id: input[:id])
+      Current.user ||= user
+      campaign = input[:campaign] || Campaign.find_by(id: input[:id])
       return Failure(:not_found) if campaign.nil? || campaign.user_id != user.id
 
       Success(input.merge(campaign: campaign, user: user))

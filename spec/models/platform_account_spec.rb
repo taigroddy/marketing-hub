@@ -112,6 +112,9 @@ RSpec.describe PlatformAccount, type: :model do
   end
 
   describe 'token encryption (ActiveRecord::Encryption)' do
+    before { Current.user = user }
+    after { Current.reset }
+
     it 'encrypts access_token and refresh_token in database while returning plaintext in model' do
       raw_access_token = 'EAABsb7819238912389_super_secret_token'
       raw_refresh_token = 'REFRESH_TOKEN_998877_super_secret'
@@ -138,6 +141,9 @@ RSpec.describe PlatformAccount, type: :model do
   end
 
   describe 'methods and scopes' do
+    before { Current.user = user }
+    after { Current.reset }
+
     let!(:active_account) { described_class.create!(valid_attributes) }
     let!(:disconnected_account) do
       described_class.create!(valid_attributes.merge(account_id: 'act_999999', status: 'disconnected'))
@@ -232,8 +238,12 @@ RSpec.describe PlatformAccount, type: :model do
         Current.user = nil
       end
 
-      it 'does not apply default scoping and returns all records' do
-        expect(described_class.all).to include(user_account, other_account)
+      it 'returns no records by default to prevent data leakage' do
+        expect(described_class.all).to be_empty
+      end
+
+      it 'returns all records when explicitly using .unscoped' do
+        expect(described_class.unscoped.all).to include(user_account, other_account)
       end
     end
   end

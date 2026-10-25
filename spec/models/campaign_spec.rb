@@ -167,8 +167,12 @@ RSpec.describe Campaign, type: :model do
         Current.user = nil
       end
 
-      it 'does not apply default scoping and returns all records' do
-        expect(described_class.all).to include(user_campaign, other_campaign)
+      it 'returns no records by default to prevent data leakage' do
+        expect(described_class.all).to be_empty
+      end
+
+      it 'returns all records when explicitly using .unscoped' do
+        expect(described_class.unscoped.all).to include(user_campaign, other_campaign)
       end
     end
   end

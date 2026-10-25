@@ -66,9 +66,10 @@ Hệ thống tuân thủ nghiêm ngặt mô hình phân tầng:
 - **Multi-tenant Default Scope:**
   - `Campaign` và `PlatformAccount` cài đặt default scope theo `Current.user`:
     ```ruby
-    default_scope { where(user_id: Current.user.id) if Current.user.present? }
+    default_scope { where(user_id: Current.user&.id) }
     ```
   - Khi cần truy vấn toàn hệ thống (như trong background worker hoặc sync service), phải gọi tường minh `.unscoped`.
+  - Không gọi thừa thãi `Current.user.campaigns` hay `Current.user.platform_accounts`, mà gọi trực tiếp qua Model (`Campaign.all`, `Campaign.find_by`, `Campaign.new`, `PlatformAccount.connected`).
 
 ### E. Background Job
 - Kế thừa `ApplicationJob`.

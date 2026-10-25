@@ -33,7 +33,8 @@ module PlatformCampaigns
       user = input[:user] || Current.user
       return Failure(:unauthorized) if user.nil?
 
-      campaign = user.campaigns.find_by(id: input[:campaign_id])
+      Current.user ||= user
+      campaign = Campaign.find_by(id: input[:campaign_id])
       return Failure(campaign: [ "not found" ]) if campaign.nil?
 
       records = campaign.platform_campaigns.joins(:platform_account)
