@@ -184,4 +184,57 @@ RSpec.describe PlatformAccount, type: :model do
       expect { active_account.destroy }.to change(PlatformCampaign, :count).by(-1)
     end
   end
+
+  describe 'multi-tenant default_scope' do
+    let(:other_user) do
+      User.create!(
+        email: 'other-platform-scope-user@example.com',
+        password: 'Password123!',
+        confirmed_at: Time.current
+      )
+    end
+
+    let!(:user_account) do
+      described_class.create!(valid_attributes)
+    end
+
+    let!(:other_account) do
+      described_class.create!(
+        valid_attributes.merge(
+          user: other_user,
+          account_id: 'act_other_tenant_123',
+          name: 'Other User Account'
+        )
+      )
+    end
+
+    after do
+      Current.reset
+    end
+
+    context 'when Current.user is set' do
+      before do
+        Current.user = user
+      end
+
+      it 'automatically filters .all to only records belonging to Current.user' do
+        expect(described_class.all).to include(user_account)
+        expect(described_class.all).not_to include(other_account)
+      end
+
+      it 'bypasses the user filter when using .unscoped' do
+        expect(described_class.unscoped.all).to include(user_account, other_account)
+      end
+    end
+
+    context 'when Current.user is nil' do
+      before do
+        Current.user = nil
+      end
+
+      it 'does not apply default scoping and returns all records' do
+        expect(described_class.all).to include(user_account, other_account)
+      end
+    end
+  end
 end

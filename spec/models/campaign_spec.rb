@@ -113,4 +113,63 @@ RSpec.describe Campaign, type: :model do
       end.not_to have_enqueued_job
     end
   end
+
+  describe 'multi-tenant default_scope' do
+    let(:other_user) do
+      User.create!(
+        email: 'other-user-scope@example.com',
+        password: 'Password123!',
+        confirmed_at: Time.current
+      )
+    end
+
+    let!(:user_campaign) do
+      described_class.create!(
+        user: user,
+        name: 'User 1 Campaign',
+        objective: 'OUTCOME_TRAFFIC',
+        budget: 500.0,
+        status: 'draft'
+      )
+    end
+
+    let!(:other_campaign) do
+      described_class.create!(
+        user: other_user,
+        name: 'User 2 Campaign',
+        objective: 'OUTCOME_LEADS',
+        budget: 800.0,
+        status: 'draft'
+      )
+    end
+
+    after do
+      Current.reset
+    end
+
+    context 'when Current.user is set' do
+      before do
+        Current.user = user
+      end
+
+      it 'automatically filters .all to only records belonging to Current.user' do
+        expect(described_class.all).to include(user_campaign)
+        expect(described_class.all).not_to include(other_campaign)
+      end
+
+      it 'bypasses the user filter when using .unscoped' do
+        expect(described_class.unscoped.all).to include(user_campaign, other_campaign)
+      end
+    end
+
+    context 'when Current.user is nil' do
+      before do
+        Current.user = nil
+      end
+
+      it 'does not apply default scoping and returns all records' do
+        expect(described_class.all).to include(user_campaign, other_campaign)
+      end
+    end
+  end
 end

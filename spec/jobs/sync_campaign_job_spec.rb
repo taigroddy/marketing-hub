@@ -100,5 +100,46 @@ RSpec.describe SyncCampaignJob, type: :job do
         expect(google_platform_campaign.last_error_message).to include('Google platform integration coming soon')
       end
     end
+
+    context 'when Current.user is set to a different user' do
+      let(:other_user) do
+        User.create!(
+          email: 'other_worker_user@example.com',
+          password: 'Password123!',
+          confirmed_at: Time.current
+        )
+      end
+
+      let(:google_account) do
+        PlatformAccount::Google.create!(
+          user: user,
+          account_id: 'act_google_777',
+          name: 'Google Test Account',
+          access_token: 'google_tok',
+          status: 'connected'
+        )
+      end
+
+      let(:google_platform_campaign) do
+        PlatformCampaign.create!(
+          campaign: campaign,
+          platform_account: google_account,
+          sync_status: 'pending'
+        )
+      end
+
+      after { Current.reset }
+
+      it 'locates and delegates records via .unscoped without being scoped out' do
+        Current.user = other_user
+        perform_enqueued_jobs do
+          described_class.perform_later(google_platform_campaign.id)
+        end
+
+        google_platform_campaign.reload
+        expect(google_platform_campaign.sync_status).to eq('failed')
+        expect(google_platform_campaign.last_error_message).to include('Google platform integration coming soon')
+      end
+    end
   end
 end

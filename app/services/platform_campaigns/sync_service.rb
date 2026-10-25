@@ -11,13 +11,13 @@ module PlatformCampaigns
 
     def check_resource(input)
       id = input[:platform_campaign_id] || input[:id]
-      platform_campaign = PlatformCampaign.find_by(id: id)
+      platform_campaign = PlatformCampaign.unscoped.find_by(id: id)
       return Failure(platform_campaign: [ "not found" ]) unless platform_campaign
 
       Success(input.merge(
         platform_campaign: platform_campaign,
-        campaign: platform_campaign.campaign,
-        account: platform_campaign.platform_account
+        campaign: Campaign.unscoped.find_by(id: platform_campaign.campaign_id),
+        account: PlatformAccount.unscoped.find_by(id: platform_campaign.platform_account_id)
       ))
     end
 
@@ -89,12 +89,12 @@ module PlatformCampaigns
       campaign = input[:campaign]
       broadcast_updates(campaign)
 
-      reloaded_platform_campaign = input[:platform_campaign].reload
+      reloaded_platform_campaign = PlatformCampaign.unscoped.find(input[:platform_campaign].id)
 
       if input[:api_result].success?
         Success(
           platform_campaign: reloaded_platform_campaign,
-          campaign: campaign.reload,
+          campaign: Campaign.unscoped.find(campaign.id),
           result: input[:api_result].value!
         )
       else
@@ -105,9 +105,9 @@ module PlatformCampaigns
     private
 
     def broadcast_updates(campaign)
-      reloaded_campaign = campaign.reload
-      connected_accounts = reloaded_campaign.user.platform_accounts.connected
-      ordered_platform_campaigns = reloaded_campaign.platform_campaigns.includes(:platform_account).order(created_at: :desc)
+      reloaded_campaign = Campaign.unscoped.find(campaign.id)
+      connected_accounts = PlatformAccount.unscoped.where(user_id: reloaded_campaign.user_id).connected
+      ordered_platform_campaigns = PlatformCampaign.unscoped.where(campaign_id: reloaded_campaign.id).includes(:platform_account).order(created_at: :desc)
 
       Turbo::StreamsChannel.broadcast_replace_to(
         "campaign_#{reloaded_campaign.id}",
