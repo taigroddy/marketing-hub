@@ -79,7 +79,33 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
         run_test!
       end
 
-      response 422, "Validation error or already published" do
+      response 404, "Campaign or platform account not found" do
+        let(:platform) { "facebook" }
+        let(:id) { 999_999 }
+        let(:Authorization) { "Bearer #{auth_token}" }
+        let(:payload) { { platform_account_ids: [ account_fb.id ] } }
+
+        run_test!
+      end
+
+      response 409, "Already published for this campaign" do
+        let(:platform) { "facebook" }
+        let(:id) { campaign.id }
+        let(:Authorization) { "Bearer #{auth_token}" }
+        let(:payload) { { platform_account_ids: [ account_fb.id ] } }
+
+        before do
+          PlatformCampaign.create!(
+            campaign: campaign,
+            platform_account: account_fb,
+            sync_status: "pending"
+          )
+        end
+
+        run_test!
+      end
+
+      response 422, "Validation error" do
         let(:platform) { "facebook" }
         let(:id) { campaign.id }
         let(:Authorization) { "Bearer #{auth_token}" }
@@ -135,6 +161,24 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
         end
       end
 
+      response 401, "Unauthorized" do
+        let(:platform) { "facebook" }
+        let(:id) { campaign.id }
+        let(:Authorization) { nil }
+        let(:payload) { { platform_campaign_id: platform_campaign.id } }
+
+        run_test!
+      end
+
+      response 404, "Campaign or platform campaign not found" do
+        let(:platform) { "facebook" }
+        let(:id) { 999_999 }
+        let(:Authorization) { "Bearer #{auth_token}" }
+        let(:payload) { { platform_campaign_id: platform_campaign.id } }
+
+        run_test!
+      end
+
       response 422, "No drift detected or resync error" do
         let(:platform) { "facebook" }
         let(:id) { campaign.id }
@@ -187,6 +231,155 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
       expect(response).to redirect_to(campaign_path(campaign))
       follow_redirect!
       expect(flash[:notice]).to be_present
+    end
+
+    it "returns 404 when publishing non-existent campaign" do
+      post "/v1/facebook/campaigns/999999/publish",
+           params: { platform_account_ids: [ account_fb.id ] },
+           headers: headers,
+           as: :json
+      expect(response).to have_http_status(:not_found)
+      json = JSON.parse(response.body)
+      expect(json["error"] || json["errors"]).to be_present
+    end
+
+    it "returns 404 when publishing with non-existent or foreign platform account" do
+      post "/v1/facebook/campaigns/#{campaign.id}/publish",
+           params: { platform_account_ids: [ 999_999 ] },
+           headers: headers,
+           as: :json
+      expect(response).to have_http_status(:not_found)
+      json = JSON.parse(response.body)
+      expect(json["error"] || json["errors"]).to be_present
+    end
+
+    it "returns 409 conflict when campaign is already published to platform account" do
+      PlatformCampaign.create!(
+        campaign: campaign,
+        platform_account: account_fb,
+        sync_status: "pending"
+      )
+
+      post "/v1/facebook/campaigns/#{campaign.id}/publish",
+           params: { platform_account_ids: [ account_fb.id ] },
+           headers: headers,
+           as: :json
+      expect(response).to have_http_status(:conflict)
+      json = JSON.parse(response.body)
+      expect(json["error"] || json["errors"]).to be_present
+    end
+
+    it "returns 422 when publishing to unsupported google platform" do
+      post "/v1/google/campaigns/#{campaign.id}/publish",
+           params: { platform_account_ids: [ account_fb.id ] },
+           headers: headers,
+           as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+      json = JSON.parse(response.body)
+      expect(json["error"]).to include("Google platform integration coming soon")
+    end
+
+    it "returns 404 when resyncing non-existent campaign" do
+      post "/v1/facebook/campaigns/999999/resync",
+           params: { platform_campaign_id: 1 },
+           headers: headers,
+           as: :json
+      expect(response).to have_http_status(:not_found)
+      json = JSON.parse(response.body)
+      expect(json["error"] || json["errors"]).to be_present
+    end
+
+    it "returns 404 when resyncing non-existent platform campaign" do
+      post "/v1/facebook/campaigns/#{campaign.id}/resync",
+           params: { platform_campaign_id: 999_999 },
+           headers: headers,
+           as: :json
+      expect(response).to have_http_status(:not_found)
+      json = JSON.parse(response.body)
+      expect(json["error"] || json["errors"]).to be_present
+    end
+
+    it "returns 422 on resync validation error" do
+      post "/v1/facebook/campaigns/%20/resync", headers: headers, as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+      json = JSON.parse(response.body)
+      expect(json["errors"]).to be_present
+    end
+
+    it "redirects with alert on HTML browser resync validation error" do
+      cookies[:jwt_token] = auth_token
+      post "/v1/facebook/campaigns/%20/resync"
+      expect(response).to redirect_to(dashboard_path)
+      follow_redirect!
+      expect(flash[:alert]).to include("Đồng bộ lại thất bại")
+    end
+
+    it "renders 404 on HTML browser publish for missing campaign" do
+      cookies[:jwt_token] = auth_token
+      post "/v1/facebook/campaigns/999999/publish",
+           params: { platform_account_ids: [ account_fb.id ] }
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it "redirects with alert on HTML browser publish validation error" do
+      cookies[:jwt_token] = auth_token
+      post "/v1/facebook/campaigns/#{campaign.id}/publish",
+           params: { platform_account_ids: [] }
+      expect(response).to redirect_to(campaign_path(campaign))
+      follow_redirect!
+      expect(flash[:alert]).to include("Đồng bộ thất bại")
+    end
+
+    it "redirects with alert on HTML browser publish when already published" do
+      PlatformCampaign.create!(campaign: campaign, platform_account: account_fb, sync_status: "pending")
+      cookies[:jwt_token] = auth_token
+      post "/v1/facebook/campaigns/#{campaign.id}/publish",
+           params: { platform_account_ids: [ account_fb.id ] }
+      expect(response).to redirect_to(campaign_path(campaign))
+      follow_redirect!
+      expect(flash[:alert]).to include("Đồng bộ thất bại")
+    end
+
+    it "redirects with alert on HTML browser publish for google platform" do
+      cookies[:jwt_token] = auth_token
+      post "/v1/google/campaigns/#{campaign.id}/publish",
+           params: { platform_account_ids: [ account_fb.id ] }
+      expect(response).to redirect_to(campaign_path(campaign))
+      follow_redirect!
+      expect(flash[:alert]).to include("Đồng bộ thất bại")
+    end
+
+    it "renders 404 on HTML browser resync for missing campaign" do
+      cookies[:jwt_token] = auth_token
+      post "/v1/facebook/campaigns/999999/resync",
+           params: { platform_campaign_id: 1 }
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it "redirects with alert on HTML browser resync when platform campaign not found" do
+      cookies[:jwt_token] = auth_token
+      post "/v1/facebook/campaigns/#{campaign.id}/resync",
+           params: { platform_campaign_id: 999_999 }
+      expect(response).to redirect_to(campaign_path(campaign))
+      follow_redirect!
+      expect(flash[:alert]).to include("Đồng bộ lại thất bại")
+    end
+
+    it "redirects with alert on HTML browser resync when no drift detected" do
+      p_camp = PlatformCampaign.create!(
+        campaign: campaign,
+        platform_account: account_fb,
+        external_campaign_id: "fb_ext_req_003",
+        sync_status: "synced",
+        synced_at: 1.day.ago
+      )
+      campaign.update_columns(updated_at: 2.days.ago)
+      cookies[:jwt_token] = auth_token
+      post "/v1/facebook/campaigns/#{campaign.id}/resync",
+           params: { platform_campaign_id: p_camp.id }
+      expect(response).to redirect_to(campaign_path(campaign))
+      follow_redirect!
+      expect(flash[:alert]).to include("Đồng bộ lại thất bại")
     end
   end
 end

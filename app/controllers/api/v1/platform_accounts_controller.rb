@@ -53,22 +53,34 @@ module Api
             if html_browser_request?
               redirect_to dashboard_path, alert: "Kết nối thất bại: #{errors.values.flatten.join(', ')}"
             else
-              render json: { errors: errors }, status: :unprocessable_entity
+              render json: { errors: errors }, status: :unprocessable_content
             end
           end
 
+          m.failure(:check_resource) do |_error|
+            render json: { error: "Unauthorized" }, status: :unauthorized
+          end
+
           m.failure do |error|
-            error_msg = error.is_a?(Hash) ? (error[:error] || error.values.flatten.join(", ")) : error.to_s
+            error_msg = extract_error_message(error)
             if html_browser_request?
               redirect_to dashboard_path, alert: "Kết nối thất bại: #{error_msg}"
             else
-              render json: { error: error_msg }, status: :unprocessable_entity
+              render json: { error: error_msg }, status: :unprocessable_content
             end
           end
         end
       end
 
       private
+
+      def extract_error_message(error)
+        if error.is_a?(Hash)
+          error[:error] || error.values.flatten.join(", ")
+        else
+          error.to_s
+        end
+      end
 
       def html_browser_request?
         request.format.html? && params[:format] != "json"

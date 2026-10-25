@@ -352,8 +352,12 @@ paths:
           description: Campaign publish initiated
         '401':
           description: Unauthorized
+        '404':
+          description: Campaign or platform account not found
+        '409':
+          description: Already published for this campaign
         '422':
-          description: Validation error or already published
+          description: Validation error
       requestBody:
         content:
           application/json:
@@ -396,6 +400,10 @@ paths:
       responses:
         '200':
           description: Campaign resync initiated
+        '401':
+          description: Unauthorized
+        '404':
+          description: Campaign or platform campaign not found
         '422':
           description: No drift detected or resync error
       requestBody:

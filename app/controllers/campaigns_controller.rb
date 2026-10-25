@@ -15,7 +15,7 @@ class CampaignsController < ApplicationController
       @published_account_ids = @campaign.platform_campaigns.pluck(:platform_account_id)
       render :show
     else
-      redirect_to dashboard_path, alert: "Campaign not found"
+      render_not_found
     end
   end
 
@@ -28,7 +28,7 @@ class CampaignsController < ApplicationController
     if @campaign
       render :edit
     else
-      redirect_to dashboard_path, alert: "Campaign not found"
+      render_not_found
     end
   end
 
@@ -42,13 +42,13 @@ class CampaignsController < ApplicationController
         @campaign = Current.user.campaigns.new(campaign_attributes_from_params)
         @errors = errors
         flash.now[:alert] = "Please fix the errors below."
-        render :new, status: :unprocessable_entity
+        render :new, status: :unprocessable_content
       end
 
-      m.failure do |error|
+      m.failure do |_error|
         @campaign = Current.user.campaigns.new(campaign_attributes_from_params)
-        flash.now[:alert] = error.is_a?(String) ? error : "Failed to create campaign."
-        render :new, status: :unprocessable_entity
+        flash.now[:alert] = "Failed to create campaign."
+        render :new, status: :unprocessable_content
       end
     end
   end
@@ -61,28 +61,39 @@ class CampaignsController < ApplicationController
 
       m.failure(:validation) do |errors|
         @campaign = Current.user.campaigns.find_by(id: params[:id])
-        return redirect_to dashboard_path, alert: "Campaign not found." if @campaign.nil?
+        return render_not_found if @campaign.nil?
 
         @errors = errors
         flash.now[:alert] = "Please fix the errors below."
-        render :edit, status: :unprocessable_entity
+        render :edit, status: :unprocessable_content
+      end
+
+      m.failure(:check_resource) do |_error|
+        render_not_found
       end
 
       m.failure do |_error|
-        redirect_to dashboard_path, alert: "Campaign not found."
+        @campaign = Current.user.campaigns.find_by(id: params[:id])
+        flash.now[:alert] = "Failed to update campaign budget."
+        render :edit, status: :unprocessable_content
       end
     end
   end
 
   private
 
+  def render_not_found
+    render file: Rails.public_path.join("404.html"), status: :not_found, layout: false
+  end
+
   def campaign_attributes_from_params
-    p = full_request_params
-    nested = p[:campaign] || p["campaign"] || p
+    nested = full_request_params[:campaign] || full_request_params["campaign"] || full_request_params
+    nested = nested.to_unsafe_h if nested.respond_to?(:to_unsafe_h)
+    nested = nested.symbolize_keys if nested.respond_to?(:symbolize_keys)
     {
-      name: nested[:name] || nested["name"],
-      objective: nested[:objective] || nested["objective"],
-      budget: nested[:budget] || nested["budget"]
+      name: nested[:name],
+      objective: nested[:objective],
+      budget: nested[:budget]
     }
   end
 end

@@ -213,5 +213,13 @@ RSpec.describe "Api::V1::PlatformAccounts", type: :request do
       expect(response).to redirect_to(dashboard_path)
       expect(flash[:alert]).to include("Kết nối thất bại")
     end
+
+    it "redirects to dashboard with alert on validation error when requested as HTML" do
+      get "/v1/facebook/oauth/callback",
+          params: { code: "" },
+          headers: { "Authorization" => "Bearer #{jwt_token}", "Accept" => "text/html" }
+      expect(response).to redirect_to(dashboard_path)
+      expect(flash[:alert]).to include("Kết nối thất bại")
+    end
   end
 end

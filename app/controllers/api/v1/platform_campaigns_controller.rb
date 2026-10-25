@@ -24,17 +24,16 @@ module Api
             if html_browser_request?
               redirect_to campaign_path(params[:id]), alert: "Đồng bộ thất bại: #{format_errors(errors)}"
             else
-              render json: { errors: errors }, status: :unprocessable_entity
+              render json: { errors: errors }, status: :unprocessable_content
             end
           end
 
+          m.failure(:check_resource) do |error|
+            render_publish_check_resource_failure(error)
+          end
+
           m.failure do |error|
-            error_msg = extract_error_message(error)
-            if html_browser_request?
-              redirect_to campaign_path(params[:id]), alert: "Đồng bộ thất bại: #{error_msg}"
-            else
-              render json: { error: error_msg }, status: :unprocessable_entity
-            end
+            render json: { error: extract_error_message(error) }, status: :unprocessable_content
           end
         end
       end
@@ -54,24 +53,88 @@ module Api
 
           m.failure(:validation) do |errors|
             if html_browser_request?
-              redirect_to campaign_path(params[:id]), alert: "Đồng bộ lại thất bại: #{format_errors(errors)}"
+              redirect_to dashboard_path, alert: "Đồng bộ lại thất bại: #{format_errors(errors)}"
             else
-              render json: { errors: errors }, status: :unprocessable_entity
+              render json: { errors: errors }, status: :unprocessable_content
             end
           end
 
-          m.failure do |error|
+          m.failure(:check_resource) do |error|
+            render_resync_check_resource_failure(error)
+          end
+
+          m.failure(:detect_drift) do |error|
             error_msg = extract_error_message(error)
             if html_browser_request?
               redirect_to campaign_path(params[:id]), alert: "Đồng bộ lại thất bại: #{error_msg}"
             else
-              render json: { error: error_msg }, status: :unprocessable_entity
+              render json: { error: error_msg }, status: :unprocessable_content
             end
+          end
+
+          m.failure do |error|
+            render json: { error: extract_error_message(error) }, status: :unprocessable_content
           end
         end
       end
 
       private
+
+      def render_publish_check_resource_failure(error)
+        status, message = publish_check_resource_status_and_message(error)
+
+        if html_browser_request?
+          if status == :not_found && error.is_a?(Hash) && error[:campaign]
+            render file: Rails.public_path.join("404.html"), status: :not_found, layout: false
+          else
+            redirect_to campaign_path(params[:id]), alert: "Đồng bộ thất bại: #{message}"
+          end
+        else
+          render json: { error: message }, status: status
+        end
+      end
+
+      def publish_check_resource_status_and_message(error)
+        return [ :unauthorized, "Unauthorized" ] unless error.is_a?(Hash)
+
+        if error[:campaign]
+          [ :not_found, "Campaign not found" ]
+        elsif error[:platform_accounts]
+          [ :not_found, "Platform account not found" ]
+        elsif error[:platform_account_ids]
+          [ :conflict, "Already published for this campaign" ]
+        elsif error[:error]
+          [ :unprocessable_content, error[:error] ]
+        else
+          [ :unprocessable_content, extract_error_message(error) ]
+        end
+      end
+
+      def render_resync_check_resource_failure(error)
+        status, message = resync_check_resource_status_and_message(error)
+
+        if html_browser_request?
+          if status == :not_found && error.is_a?(Hash) && error[:campaign]
+            render file: Rails.public_path.join("404.html"), status: :not_found, layout: false
+          else
+            redirect_to campaign_path(params[:id]), alert: "Đồng bộ lại thất bại: #{message}"
+          end
+        else
+          render json: { error: message }, status: status
+        end
+      end
+
+      def resync_check_resource_status_and_message(error)
+        return [ :unauthorized, "Unauthorized" ] unless error.is_a?(Hash)
+
+        if error[:campaign]
+          [ :not_found, "Campaign not found" ]
+        elsif error[:platform_campaigns]
+          [ :not_found, "Platform campaign not found" ]
+        else
+          [ :unprocessable_content, extract_error_message(error) ]
+        end
+      end
 
       def html_browser_request?
         request.format.html? && params[:format] != "json"

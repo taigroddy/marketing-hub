@@ -236,5 +236,27 @@ RSpec.describe "Api::V1::Campaigns", type: :request do
       expect(campaign_a.name).to eq("User A Camp")
       expect(campaign_a.objective).to eq("OUTCOME_TRAFFIC")
     end
+
+    it "returns 404 when updating non-existent campaign budget" do
+      patch "/api/v1/campaigns/999999",
+            params: { budget: 3500.00 },
+            headers: headers_a,
+            as: :json
+
+      expect(response).to have_http_status(:not_found)
+      json = JSON.parse(response.body)
+      expect(json["error"]).to eq("Campaign not found")
+    end
+
+    it "returns 404 when updating another user campaign budget" do
+      patch "/api/v1/campaigns/#{campaign_b.id}",
+            params: { budget: 3500.00 },
+            headers: headers_a,
+            as: :json
+
+      expect(response).to have_http_status(:not_found)
+      json = JSON.parse(response.body)
+      expect(json["error"]).to eq("Campaign not found")
+    end
   end
 end

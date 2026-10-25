@@ -151,24 +151,20 @@ RSpec.describe 'Campaigns Web UI', type: :request do
     end
 
     context 'when accessing another user campaign' do
-      it 'redirects to dashboard with alert' do
+      it 'renders 404 not found page' do
         cookies[:jwt_token] = token_b
         get "/campaigns/#{campaign_a.id}"
 
-        expect(response).to redirect_to(dashboard_path)
-        follow_redirect!
-        expect(flash[:alert]).to eq('Campaign not found')
+        expect(response).to have_http_status(:not_found)
       end
     end
 
     context 'when campaign does not exist' do
-      it 'redirects to dashboard with alert' do
+      it 'renders 404 not found page' do
         cookies[:jwt_token] = token_a
         get '/campaigns/999999'
 
-        expect(response).to redirect_to(dashboard_path)
-        follow_redirect!
-        expect(flash[:alert]).to eq('Campaign not found')
+        expect(response).to have_http_status(:not_found)
       end
     end
   end
@@ -206,7 +202,7 @@ RSpec.describe 'Campaigns Web UI', type: :request do
     end
 
     context 'with invalid parameters' do
-      it 'renders new form with 422 unprocessable entity' do
+      it 'renders new form with 422 unprocessable content' do
         cookies[:jwt_token] = token_a
         expect do
           post '/campaigns', params: {
@@ -218,24 +214,24 @@ RSpec.describe 'Campaigns Web UI', type: :request do
           }
         end.not_to change(Campaign, :count)
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
       end
     end
 
-    context 'when service returns generic failure' do
-      it 'renders new form with error message' do
+    context 'when contract validation fails with invalid status' do
+      it 'renders new form with 422 unprocessable content and error message' do
         cookies[:jwt_token] = token_a
-        allow_any_instance_of(Campaign).to receive(:save).and_return(false)
 
         post '/campaigns', params: {
           campaign: {
             name: 'Valid',
             objective: 'OUTCOME_TRAFFIC',
-            budget: '500'
+            budget: '500',
+            status: 'invalid_status'
           }
         }
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         expect(flash[:alert]).to be_present
       end
     end
@@ -255,24 +251,20 @@ RSpec.describe 'Campaigns Web UI', type: :request do
     end
 
     context 'when accessing another user campaign (strict tenant isolation)' do
-      it 'redirects to dashboard with alert' do
+      it 'renders 404 not found page' do
         cookies[:jwt_token] = token_b
         get "/campaigns/#{campaign_a.id}/edit"
 
-        expect(response).to redirect_to(dashboard_path)
-        follow_redirect!
-        expect(flash[:alert]).to be_present
+        expect(response).to have_http_status(:not_found)
       end
     end
 
     context 'when campaign does not exist' do
-      it 'redirects to dashboard with alert' do
+      it 'renders 404 not found page' do
         cookies[:jwt_token] = token_a
         get '/campaigns/999999/edit'
 
-        expect(response).to redirect_to(dashboard_path)
-        follow_redirect!
-        expect(flash[:alert]).to eq('Campaign not found')
+        expect(response).to have_http_status(:not_found)
       end
     end
   end
@@ -296,26 +288,48 @@ RSpec.describe 'Campaigns Web UI', type: :request do
     end
 
     context 'when validation fails' do
-      it 'renders edit form with 422 unprocessable entity' do
+      it 'renders edit form with 422 unprocessable content' do
         cookies[:jwt_token] = token_a
         patch "/campaigns/#{campaign_a.id}", params: {
           campaign: { budget: '-50' }
         }
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         expect(flash[:alert]).to be_present
       end
     end
 
+    context 'when validation fails on non-existent campaign' do
+      it 'renders 404 not found page' do
+        cookies[:jwt_token] = token_a
+        patch '/campaigns/999999', params: {
+          campaign: { budget: '-50' }
+        }
+
+        expect(response).to have_http_status(:not_found)
+      end
+    end
+
     context 'when updating another user campaign' do
-      it 'redirects to dashboard with alert and does not modify campaign' do
+      it 'renders 404 not found page and does not modify campaign' do
         cookies[:jwt_token] = token_b
         patch "/campaigns/#{campaign_a.id}", params: {
           campaign: { budget: '9999.00' }
         }
 
-        expect(response).to redirect_to(dashboard_path)
+        expect(response).to have_http_status(:not_found)
         expect(campaign_a.reload.budget).to eq(1500.00)
+      end
+    end
+
+    context 'when updating non-existent campaign' do
+      it 'renders 404 not found page' do
+        cookies[:jwt_token] = token_a
+        patch '/campaigns/999999', params: {
+          campaign: { budget: '9999.00' }
+        }
+
+        expect(response).to have_http_status(:not_found)
       end
     end
   end

@@ -31,11 +31,15 @@ module Api
           end
 
           m.failure(:validation) do |errors|
-            render json: { errors: errors }, status: :unprocessable_entity
+            render json: { errors: errors }, status: :unprocessable_content
+          end
+
+          m.failure(:check_resource) do |_error|
+            render json: { error: "Unauthorized" }, status: :unauthorized
           end
 
           m.failure do |error|
-            render json: { errors: error }, status: :unprocessable_entity
+            render json: { errors: error }, status: :unprocessable_content
           end
         end
       end
@@ -50,15 +54,15 @@ module Api
           end
 
           m.failure(:validation) do |errors|
-            render json: { errors: errors }, status: :unprocessable_entity
+            render json: { errors: errors }, status: :unprocessable_content
           end
 
           m.failure(:check_resource) do |_error|
             render json: { error: "Campaign not found" }, status: :not_found
           end
 
-          m.failure do |_error|
-            render json: { error: "Campaign not found" }, status: :not_found
+          m.failure do |error|
+            render json: { errors: error }, status: :unprocessable_content
           end
         end
       end
