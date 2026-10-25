@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Campaigns
-  class UpdateBudgetService < ApplicationService
+  class UpdateService < ApplicationService
     step :validation
     step :check_resource
     step :process
@@ -21,7 +21,7 @@ module Campaigns
 
       normalized[:id] ||= provided_campaign.id if provided_campaign
 
-      result = Campaigns::UpdateBudgetContract.new.call(normalized)
+      result = Campaigns::UpdateContract.new.call(normalized)
       if result.success?
         data = result.to_h
         data[:user] = provided_user if provided_user

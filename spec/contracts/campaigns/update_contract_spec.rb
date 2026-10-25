@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe Campaigns::UpdateBudgetContract do
+RSpec.describe Campaigns::UpdateContract do
   subject(:contract) { described_class.new }
 
   it 'passes with valid budget and id' do

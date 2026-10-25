@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe Campaigns::UpdateBudgetService do
+RSpec.describe Campaigns::UpdateService do
   let(:user_a) do
     User.create!(
       email: 'user-a@example.com',

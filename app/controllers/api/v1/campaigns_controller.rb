@@ -45,7 +45,7 @@ module Api
       end
 
       def update
-        Campaigns::UpdateBudgetService.call(full_request_params) do |m|
+        Campaigns::UpdateService.call(full_request_params) do |m|
           m.success do |result|
             render json: {
               campaign: CampaignBlueprint.render_as_hash(result[:campaign]),

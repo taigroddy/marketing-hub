@@ -54,7 +54,7 @@ class CampaignsController < ApplicationController
   end
 
   def update
-    Campaigns::UpdateBudgetService.call(full_request_params) do |m|
+    Campaigns::UpdateService.call(full_request_params) do |m|
       m.success do |_result|
         redirect_to dashboard_path, notice: "Campaign budget updated successfully."
       end
