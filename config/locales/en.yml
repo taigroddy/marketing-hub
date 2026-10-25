@@ -1,31 +1,206 @@
-# Files in the config/locales directory are used for internationalization and
-# are automatically loaded by Rails. If you want to use locales other than
-# English, add the necessary files in this directory.
-#
-# To use the locales, use `I18n.t`:
-#
-#     I18n.t "hello"
-#
-# In views, this is aliased to just `t`:
-#
-#     <%= t("hello") %>
-#
-# To use a different locale, set it with `I18n.locale`:
-#
-#     I18n.locale = :es
-#
-# This would use the information in config/locales/es.yml.
-#
-# To learn more about the API, please read the Rails Internationalization guide
-# at https://guides.rubyonrails.org/i18n.html.
-#
-# Be aware that YAML interprets the following case-insensitive strings as
-# booleans: `true`, `false`, `on`, `off`, `yes`, `no`. Therefore, these strings
-# must be quoted to be interpreted as strings. For example:
-#
-#     en:
-#       "yes": yup
-#       enabled: "ON"
-
 en:
-  hello: "Hello world"
+  errors:
+    not_found: "Record not found"
+    unauthorized: "Unauthorized"
+    conflict_published: "Already published for this campaign"
+    network_error: "Network connection error."
+    check_info: "Please check the following information:"
+  dry_validation:
+    errors:
+      key?: "is missing"
+      filled?: "must be filled"
+      empty?: "cannot be empty"
+      gt?: "must be greater than %{num}"
+      gteq?: "must be greater than or equal to %{num}"
+      min_size?: "size cannot be less than %{num}"
+      max_size?: "size cannot be greater than %{num}"
+      format?: "is in invalid format"
+      str?: "must be a string"
+      int?: "must be an integer"
+      decimal?: "must be a decimal"
+      array?: "must be an array"
+      inclusion?: "is not included in the list"
+      included_in?: "must be one of: %{list}"
+      size?: "size must be %{size}"
+      rules:
+        email:
+          invalid: "is invalid"
+        password_confirmation:
+          must_match_password: "must match password"
+        refresh_token:
+          required_without_user_token: "is required when user_token_id is not provided"
+        status:
+          not_in_list: "is not included in the list"
+        objective:
+          not_in_list: "is not included in the list"
+  auth:
+    registration_success: "Registration successful. Please check your email to confirm your account."
+    invalid_refresh_token: "Invalid or expired refresh token."
+    logout_success: "Logged out successfully."
+    invalid_token: "Invalid or expired token."
+    email_confirmed: "Email confirmed successfully."
+    invalid_confirmation_token: "Invalid or expired confirmation token."
+    unconfirmed_email: "Please confirm your email address before logging in."
+    invalid_credentials: "Invalid email or password."
+    sign_in_required: "Please sign in to continue."
+  navbar:
+    brand: "Marketing Hub"
+    sign_out: "Sign Out"
+    welcome: "Welcome back"
+    language: "Language"
+  sessions:
+    new:
+      title: "Sign In"
+      subtitle: "Welcome back! Access your multi-platform marketing hub."
+      email_label: "Email Address"
+      email_placeholder: "you@example.com"
+      password_label: "Password"
+      submit_btn: "Sign In"
+      no_account: "Don't have an account?"
+      create_account_link: "Create an account"
+      login_failed: "Login failed."
+  registrations:
+    new:
+      title: "Create Account"
+      subtitle: "Register to manage and track multi-channel marketing campaigns."
+      email_label: "Email Address"
+      email_placeholder: "you@example.com"
+      password_label: "Password"
+      password_confirmation_label: "Confirm Password"
+      submit_btn: "Create Account"
+      has_account: "Already have an account?"
+      sign_in_link: "Sign in"
+      registration_failed: "Registration failed."
+  confirmations:
+    show:
+      title: "Confirm Email"
+      verifying: "Verifying your email address..."
+      success_msg: "Email confirmed successfully! Redirecting..."
+      error_msg: "Invalid or expired confirmation token."
+      login_btn: "Sign in now"
+  dashboard:
+    title: "Dashboard"
+    welcome_back: "Welcome back, %{email}"
+    platform_accounts_title: "Platform Accounts"
+    platform_accounts_desc: "Manage and connect Facebook and Google ad platform accounts"
+    connect_new: "Connect New"
+    platform_col: "Platform"
+    account_name_col: "Account Name"
+    account_id_col: "Account ID"
+    status_col: "Status"
+    connected_date_col: "Connected Date"
+    connected: "Connected"
+    no_accounts: "No connected ad accounts yet"
+    no_accounts_desc: "Connect your Facebook Ads or Google Ads accounts to sync and manage multi-channel campaigns."
+    link_first_account: "Connect first account"
+    campaigns_title: "Campaigns"
+    campaigns_desc: "Manage and sync your advertising campaigns"
+    create_new: "Create New"
+    campaign_name_col: "Campaign Name"
+    objective_col: "Objective"
+    budget_col: "Budget"
+    actions_col: "Actions"
+    view_detail: "View detail"
+    edit_budget: "Edit budget"
+    no_campaigns: "No campaigns yet"
+    no_campaigns_desc: "Get started by creating your first advertising campaign."
+    create_first_campaign: "Create first campaign"
+    modal_title: "Connect New Platform Account"
+    facebook_desc: "Manage campaigns on Facebook & Instagram"
+    connect_btn: "Connect"
+    google_desc: "Manage campaigns on Google Search & YouTube"
+    coming_soon: "Coming soon"
+    unsupported: "Unsupported"
+    close: "Close"
+    connecting: "Connecting..."
+    connect_error: "Connection error: %{error}"
+  campaigns:
+    messages:
+      created: "Campaign created successfully"
+      budget_updated: "Campaign budget updated successfully"
+    objectives:
+      traffic: "Traffic (OUTCOME_TRAFFIC)"
+      leads: "Leads (OUTCOME_LEADS)"
+      awareness: "Brand Awareness (OUTCOME_AWARENESS)"
+      sales: "Sales & Engagement (OUTCOME_SALES)"
+    show:
+      details_subtitle: "Campaign details and platform synchronization status."
+      dashboard_link: "Dashboard"
+      edit_link: "Edit"
+      objective: "Objective"
+      budget: "Budget"
+      synced_platforms: "Synced Platforms"
+      status: "Status"
+      updated_at: "Updated At"
+      linked_platforms: "Linked Platforms"
+      linked_platforms_desc: "Select connected ad accounts to publish and sync campaigns."
+      no_linked_accounts: "You have not connected any ad accounts yet."
+      connect_at_dashboard: "Connect accounts at Dashboard"
+      already_published: "Published"
+      ready_to_sync: "Ready to sync"
+      sync_to_platform: "Sync to platform"
+      syncing: "Syncing..."
+      sync_requesting: "Sending sync request..."
+      sync_failed: "Sync request failed."
+      synced_campaigns: "Synced Campaigns"
+      synced_campaigns_desc: "List of campaign links across platforms and their sync status."
+      no_synced_campaigns: "This campaign is not linked or synced to any platform yet."
+      platform_and_account: "Platform & Account"
+      external_id: "External ID"
+      synced_at: "Synced At"
+      not_synced_yet: "Not yet"
+      drift_status: "Drifted"
+      synced_status: "Synced"
+      failed_status: "Failed"
+      pending_status: "Pending"
+      resync_btn: "Re-sync"
+      select_account_error: "Please select at least one ad account to publish."
+      target_goal: "Target Goal"
+      connected_count:
+        one: "1 connected"
+        other: "%{count} connected"
+    new:
+      title: "Create New Campaign"
+      desc: "Fill in campaign details to prepare syncing across ad platforms."
+      name_label: "Campaign Name"
+      name_placeholder: "e.g. Summer Promotion 2026"
+      objective_label: "Objective"
+      select_objective: "-- Select campaign objective --"
+      budget_label: "Budget (₫ VND)"
+      cancel_btn: "Cancel"
+      submit_btn: "Create Campaign"
+      creating: "Creating..."
+      create_failed: "Create campaign failed."
+    edit:
+      title: "Edit Campaign Budget"
+      desc: "Only budget updates are permitted. Other fields are locked."
+      name_label: "Campaign Name (Locked)"
+      objective_label: "Objective (Locked)"
+      budget_label: "Budget (₫ VND)"
+      budget_warning: "Warning: Changing budget will drift from synced platforms and activate Re-sync."
+      cancel_btn: "Cancel"
+      submit_btn: "Update Budget"
+      saving: "Saving..."
+      save_failed: "Update budget failed."
+  platform_accounts:
+    messages:
+      connected: "Platform account connected successfully"
+      connected_notice: "Account %{name} connected successfully."
+      connect_failed: "Connection failed: %{error}"
+      not_supported: "Platform not supported"
+      unauthorized: "Invalid or expired session."
+  platform_campaigns:
+    messages:
+      publish_initiated: "Campaign publish initiated successfully"
+      resync_initiated: "Campaign resync initiated successfully"
+      no_drift_detected: "No drift detected between campaign and platform"
+  mailers:
+    user_mailer:
+      confirmation_subject: "Confirm your email address"
+      welcome: "Welcome to Marketing Hub!"
+      instructions: "Please click the button below to confirm your email address and activate your account:"
+      confirm_button: "Confirm My Email"
+      ignore_notice: "If you did not create an account, no further action is required."
+  services:
+    auth:
+      email_taken: "has already been taken"

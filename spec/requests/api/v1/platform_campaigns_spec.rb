@@ -107,7 +107,7 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
           json = JSON.parse(response.body)
           expect(json["success"]).to be false
           expect(json["data"]).to be_nil
-          expect(json["errors"]).to eq("Unauthorized")
+          expect(json["errors"]).to eq(I18n.t("errors.unauthorized"))
         end
       end
 
@@ -244,7 +244,7 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
           json = JSON.parse(response.body)
           expect(json["success"]).to be true
           expect(json["errors"]).to be_nil
-          expect(json["data"]["message"]).to include("Campaign resync initiated successfully")
+          expect(json["data"]["message"]).to eq(I18n.t("platform_campaigns.messages.resync_initiated"))
         end
       end
 
@@ -266,7 +266,7 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
           json = JSON.parse(response.body)
           expect(json["success"]).to be false
           expect(json["data"]).to be_nil
-          expect(json["errors"]).to eq("Unauthorized")
+          expect(json["errors"]).to eq(I18n.t("errors.unauthorized"))
         end
       end
 
@@ -315,7 +315,7 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
           json = JSON.parse(response.body)
           expect(json["success"]).to be false
           expect(json["data"]).to be_nil
-          expect(json["errors"]).to include("No drift detected")
+          expect(json["errors"]).to include(I18n.t("platform_campaigns.messages.no_drift_detected"))
         end
       end
     end
@@ -433,7 +433,7 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
       expect(response).to have_http_status(:unprocessable_content)
       json = JSON.parse(response.body)
       expect(json["success"]).to be false
-      expect(json["errors"]).to include("No drift detected")
+      expect(json["errors"]).to include(I18n.t("platform_campaigns.messages.no_drift_detected"))
     end
   end
 end

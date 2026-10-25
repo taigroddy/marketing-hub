@@ -3,63 +3,98 @@
   platform_campaigns = local_assigns[:platform_campaigns] || @platform_campaigns || campaign.platform_campaigns
 %>
 
-<div id="platform_campaigns_section" class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+<div id="platform_campaigns_section"
+     class="bg-white rounded-xl shadow-sm border border-gray-100 p-8"
+     data-controller="campaign-sync"
+     data-campaign-sync-campaign-id-value="<%= campaign.id %>"
+     data-campaign-sync-syncing-text-value="<%= t('campaigns.show.pending_status') %>"
+     data-campaign-sync-resync-text-value="<%= t('campaigns.show.resync_btn') %>"
+     data-campaign-sync-failed-text-value="<%= t('campaigns.show.sync_failed') %>"
+     data-campaign-sync-server-error-text-value="<%= t('errors.network_error') %>">
   <div class="pb-4 border-b border-gray-100">
-    <h2 class="text-lg font-bold text-gray-900">Chiến dịch đã đồng bộ</h2>
-    <p class="text-sm text-gray-500 mt-1">Danh sách liên kết chiến dịch trên các nền tảng và tình trạng đồng bộ.</p>
+    <h2 class="text-lg font-bold text-gray-900"><%= t("campaigns.show.synced_campaigns") %></h2>
+    <p class="text-sm text-gray-500 mt-1"><%= t("campaigns.show.synced_campaigns_desc") %></p>
   </div>
 
-  <div id="resync-error-alert" class="hidden mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-    <p id="resync-error-msg" class="text-sm text-red-700"></p>
+  <div id="resync-error-alert"
+       data-campaign-sync-target="resyncErrorAlert"
+       class="hidden mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+    <p id="resync-error-msg" data-campaign-sync-target="resyncErrorMsg" class="text-sm text-red-700"></p>
   </div>
 
   <% if platform_campaigns.blank? %>
-    <div class="mt-6 text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-      <p class="text-gray-500 text-sm">Chiến dịch này chưa được liên kết hoặc đồng bộ tới nền tảng nào.</p>
+    <div class="mt-6 text-center py-10 bg-gray-50/50 rounded-2xl border-2 border-dashed border-gray-200">
+      <div class="w-12 h-12 mx-auto rounded-xl bg-gray-100 text-gray-400 flex items-center justify-center">
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+        </svg>
+      </div>
+      <p class="text-gray-500 text-sm mt-3 font-medium"><%= t("campaigns.show.no_synced_campaigns") %></p>
     </div>
   <% else %>
-    <div class="mt-6 overflow-x-auto">
+    <div class="mt-6 overflow-hidden border border-gray-200 rounded-xl">
       <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-          <tr>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nền tảng & Tài khoản</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">External ID</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đồng bộ lúc</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
-            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
+        <thead class="bg-gray-50/80">
+          <tr class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            <th scope="col" class="px-6 py-3.5"><%= t("campaigns.show.platform_and_account") %></th>
+            <th scope="col" class="px-6 py-3.5"><%= t("campaigns.show.external_id") %></th>
+            <th scope="col" class="px-6 py-3.5"><%= t("campaigns.show.synced_at") %></th>
+            <th scope="col" class="px-6 py-3.5"><%= t("campaigns.show.status") %></th>
+            <th scope="col" class="px-6 py-3.5 text-right"><%= t("dashboard.actions_col") %></th>
           </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
+        <tbody class="bg-white divide-y divide-gray-100">
           <% platform_campaigns.each do |pc| %>
-            <% has_drift = pc.out_of_sync? %>
-            <tr>
+            <% has_drift = pc.out_of_sync? && pc.sync_status != "pending" %>
+            <tr id="platform_campaign_row_<%= pc.id %>" class="hover:bg-indigo-50/30 transition-colors">
               <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm font-medium text-gray-900"><%= pc.platform_account.name.presence || pc.platform_account.account_id %></div>
-                <div class="text-xs text-gray-500"><%= pc.platform_account.platform_name %></div>
+                <div class="flex items-center space-x-2.5">
+                  <% if pc.platform_account.type.to_s.include?("Facebook") %>
+                    <span class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-200">
+                      <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                      </svg>
+                    </span>
+                  <% else %>
+                    <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-200 text-xs font-bold">
+                      G
+                    </span>
+                  <% end %>
+                  <div>
+                    <div class="text-sm font-bold text-gray-900"><%= pc.platform_account.name.presence || pc.platform_account.account_id %></div>
+                    <div class="text-xs text-gray-500"><%= pc.platform_account.platform_name %></div>
+                  </div>
+                </div>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-700">
-                <%= pc.external_campaign_id.presence || "-" %>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <span class="px-2.5 py-1 rounded-md bg-gray-100 font-mono text-xs text-gray-700">
+                  <%= pc.external_campaign_id.presence || "-" %>
+                </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                <%= pc.synced_at ? pc.synced_at.strftime("%d/%m/%Y %H:%M:%S") : "Chưa có" %>
+                <%= pc.synced_at ? pc.synced_at.strftime("%d/%m/%Y %H:%M:%S") : t("campaigns.show.not_synced_yet") %>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex items-center space-x-2">
                   <% if has_drift %>
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300">
-                      Sai lệch
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300">
+                      <span class="w-1.5 h-1.5 mr-1.5 bg-amber-500 rounded-full animate-pulse"></span>
+                      <%= t("campaigns.show.drift_status") %>
                     </span>
                   <% elsif pc.sync_status == "synced" %>
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      Đã đồng bộ
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-200">
+                      <span class="w-1.5 h-1.5 mr-1.5 bg-green-500 rounded-full"></span>
+                      <%= t("campaigns.show.synced_status") %>
                     </span>
                   <% elsif pc.sync_status == "failed" %>
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800" title="<%= pc.last_error_message %>">
-                      Thất bại
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200" title="<%= pc.last_error_message %>">
+                      <span class="w-1.5 h-1.5 mr-1.5 bg-red-500 rounded-full"></span>
+                      <%= t("campaigns.show.failed_status") %>
                     </span>
                   <% else %>
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      Đang chờ
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+                      <span class="w-1.5 h-1.5 mr-1.5 bg-blue-500 rounded-full animate-pulse"></span>
+                      <%= t("campaigns.show.pending_status") %>
                     </span>
                   <% end %>
                 </div>
@@ -67,11 +102,15 @@
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <% if has_drift %>
                   <button type="button"
-                          class="resync-btn inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-amber-600 hover:bg-amber-700 transition cursor-pointer"
+                          data-action="click->campaign-sync#resync"
+                          class="resync-btn inline-flex items-center px-3.5 py-1.5 border border-transparent text-xs font-semibold rounded-lg shadow-sm text-white bg-amber-600 hover:bg-amber-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                           data-platform="<%= pc.platform_account.platform_name.downcase %>"
                           data-campaign-id="<%= campaign.id %>"
                           data-platform-campaign-id="<%= pc.id %>">
-                    Re-sync
+                    <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span><%= t("campaigns.show.resync_btn") %></span>
                   </button>
                 <% end %>
               </td>
@@ -82,51 +121,3 @@
     </div>
   <% end %>
 </div>
-
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const errorAlert = document.getElementById('resync-error-alert');
-    const errorMsg = document.getElementById('resync-error-msg');
-
-    document.querySelectorAll('.resync-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        e.preventDefault();
-        btn.disabled = true;
-        if (errorAlert) errorAlert.classList.add('hidden');
-
-        const platform = btn.dataset.platform;
-        const campaignId = btn.dataset.campaignId;
-        const pcId = parseInt(btn.dataset.platformCampaignId, 10);
-
-        try {
-          const response = await fetch(`/api/v1/${platform}/campaigns/${campaignId}/resync`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json'
-            },
-            body: JSON.stringify({ platform_campaign_id: pcId })
-          });
-
-          const data = await response.json();
-          if (response.ok && data.success) {
-            window.location.reload();
-          } else {
-            btn.disabled = false;
-            if (errorAlert && errorMsg) {
-              errorAlert.classList.remove('hidden');
-              const errs = data.errors || 'Đồng bộ lại thất bại';
-              errorMsg.textContent = typeof errs === 'object' ? JSON.stringify(errs) : String(errs);
-            }
-          }
-        } catch (err) {
-          btn.disabled = false;
-          if (errorAlert && errorMsg) {
-            errorAlert.classList.remove('hidden');
-            errorMsg.textContent = 'Lỗi kết nối máy chủ: ' + err.message;
-          }
-        }
-      });
-    });
-  });
-</script>

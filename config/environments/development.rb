@@ -45,7 +45,7 @@ Rails.application.configure do
   }
 
   # Set host to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: "marketing.localhost" }
+  config.action_mailer.default_url_options = { host: "marketing.localhost", protocol: "https" }
 
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
@@ -69,8 +69,8 @@ Rails.application.configure do
   # Annotate rendered view with file names.
   config.action_view.annotate_rendered_view_with_filenames = true
 
-  # Uncomment if you wish to allow Action Cable access from any origin.
-  # config.action_cable.disable_request_forgery_protection = true
+  # Allow Action Cable access from any local origin in development.
+  config.action_cable.disable_request_forgery_protection = true
 
   # Allow requests from local domains
   config.hosts << "marketing.localhost"

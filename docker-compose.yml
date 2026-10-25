@@ -5,13 +5,17 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./config/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./config/traefik/dynamic_conf.yml:/etc/traefik/dynamic_conf.yml:ro
+      - ./config/traefik/certs:/etc/traefik/certs:ro
     networks:
       - marketing-net
 
   web:
+    image: marketing
     build:
       context: .
       dockerfile: Dockerfile
@@ -35,8 +39,8 @@ services:
       SMTP_PORT: ${SMTP_PORT:-1025}
       FB_APP_ID: ${FB_APP_ID:-}
       FB_APP_SECRET: ${FB_APP_SECRET:-}
-      FB_AUTHORIZE_REDIRECT_URI: ${FB_AUTHORIZE_REDIRECT_URI:-${FB_AUTHORIZE_REDIRECT_UI:-http://marketing.localhost/v1/facebook/oauth/callback}}
-      FB_AUTHORIZE_REDIRECT_UI: ${FB_AUTHORIZE_REDIRECT_UI:-${FB_AUTHORIZE_REDIRECT_URI:-http://marketing.localhost/v1/facebook/oauth/callback}}
+      FB_AUTHORIZE_REDIRECT_URI: ${FB_AUTHORIZE_REDIRECT_URI:-${FB_AUTHORIZE_REDIRECT_UI:-https://marketing.localhost/v1/facebook/oauth/callback}}
+      FB_AUTHORIZE_REDIRECT_UI: ${FB_AUTHORIZE_REDIRECT_UI:-${FB_AUTHORIZE_REDIRECT_URI:-https://marketing.localhost/v1/facebook/oauth/callback}}
       FB_TEST_ACCESS_TOKEN: ${FB_TEST_ACCESS_TOKEN:-}
     depends_on:
       db:
@@ -49,11 +53,15 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.web.rule=Host(`marketing.localhost`)"
       - "traefik.http.routers.web.entrypoints=web"
+      - "traefik.http.routers.web-secure.rule=Host(`marketing.localhost`)"
+      - "traefik.http.routers.web-secure.entrypoints=websecure"
+      - "traefik.http.routers.web-secure.tls=true"
       - "traefik.http.services.web.loadbalancer.server.port=3000"
     networks:
       - marketing-net
 
   worker:
+    image: marketing
     build: .
     command: bundle exec sidekiq
     depends_on:
@@ -115,6 +123,9 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.mailpit.rule=Host(`mailchimp.localhost`)"
       - "traefik.http.routers.mailpit.entrypoints=web"
+      - "traefik.http.routers.mailpit-secure.rule=Host(`mailchimp.localhost`)"
+      - "traefik.http.routers.mailpit-secure.entrypoints=websecure"
+      - "traefik.http.routers.mailpit-secure.tls=true"
       - "traefik.http.services.mailpit.loadbalancer.server.port=8025"
     networks:
       - marketing-net

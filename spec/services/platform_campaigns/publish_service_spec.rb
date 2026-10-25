@@ -101,7 +101,7 @@ RSpec.describe PlatformCampaigns::PublishService, type: :service do
         platform_account_ids: [ account_fb1.id ]
       )
       expect(result).to be_failure
-      expect(result.failure[:campaign]).to include('not found')
+      expect(result.failure[:campaign]).to include(I18n.t('errors.not_found'))
     end
 
     it 'fails when platform accounts do not belong to user or match platform' do
@@ -124,7 +124,7 @@ RSpec.describe PlatformCampaigns::PublishService, type: :service do
         platform_account_ids: [ other_account.id ]
       )
       expect(result).to be_failure
-      expect(result.failure[:platform_accounts]).to include('invalid or not found')
+      expect(result.failure[:platform_accounts]).to include(I18n.t('errors.not_found'))
     end
 
     it 'raises NotImplementedError when Google platform is requested' do
@@ -151,12 +151,13 @@ RSpec.describe PlatformCampaigns::PublishService, type: :service do
         platform_account_ids: [ account_fb1.id, account_fb2.id ]
       )
       expect(result).to be_failure
-      expect(result.failure[:platform_account_ids]).to include('already published for this campaign')
+      expect(result.failure[:platform_account_ids]).to include(I18n.t('errors.conflict_published'))
     end
   end
 
   describe 'process & execution' do
-    it 'creates pending records via upsert_records and enqueues SyncCampaignJob via enqueue_sync_jobs' do
+    it 'creates pending records via upsert_records, broadcasts pending state, and enqueues SyncCampaignJob via enqueue_sync_jobs' do
+      messages_before = ActionCable.server.pubsub.broadcasts("campaign_#{campaign.id}").size
       expect do
         result = described_class.call(
           id: campaign.id,
@@ -168,17 +169,21 @@ RSpec.describe PlatformCampaigns::PublishService, type: :service do
       end.to change(PlatformCampaign, :count).by(2)
         .and have_enqueued_job(SyncCampaignJob).twice
 
+      messages_after = ActionCable.server.pubsub.broadcasts("campaign_#{campaign.id}").size
+      expect(messages_after).to be > messages_before
+
       records = PlatformCampaign.where(campaign: campaign)
       expect(records.pluck(:sync_status).uniq).to eq([ 'pending' ])
+      expect(campaign.reload.status).to eq('published')
     end
 
-    it 'supports synchronous mode (async: false) executing outside DB transactions', vcr: { cassette_name: 'facebook_sync_campaign', record: :new_episodes } do
+    it 'enqueues and executes background sync job', vcr: { cassette_name: 'facebook_sync_campaign', record: :new_episodes } do
       sync_campaign = Campaign.create!(
         user: user,
         name: 'Summer Promo 2026',
         objective: 'OUTCOME_TRAFFIC',
         budget: 100_000.0,
-        status: 'active'
+        status: 'draft'
       )
       sync_account = PlatformAccount::Facebook.create!(
         user: user,
@@ -188,14 +193,18 @@ RSpec.describe PlatformCampaigns::PublishService, type: :service do
         status: 'connected'
       )
 
-      result = described_class.call(
-        id: sync_campaign.id,
-        platform: 'facebook',
-        platform_account_ids: [ sync_account.id ],
-        async: false
-      )
+      perform_enqueued_jobs do
+        result = described_class.call(
+          id: sync_campaign.id,
+          platform: 'facebook',
+          platform_account_ids: [ sync_account.id ]
+        )
 
-      expect(result).to be_success
+        expect(result).to be_success
+      end
+
+      sync_campaign.reload
+      expect(sync_campaign.status).to eq('published')
       created_record = PlatformCampaign.find_by(campaign: sync_campaign, platform_account: sync_account)
       expect(created_record.sync_status).to eq('synced')
       expect(created_record.external_campaign_id).to eq('120252471690050228')

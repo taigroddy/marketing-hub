@@ -1,101 +1,76 @@
-<div class="max-w-2xl mx-auto py-8">
-  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
-    <div class="pb-6 border-b border-gray-100">
-      <h1 class="text-2xl font-bold text-gray-900">Chỉnh Sửa Ngân Sách Campaign</h1>
-      <p class="text-sm text-gray-500 mt-1">Chỉ cho phép cập nhật ngân sách (Budget). Các thông tin khác không thể chỉnh sửa.</p>
-    </div>
+<% content_for :title, "#{t('campaigns.edit.title')} - #{@campaign.name}" %>
 
-    <div id="error-alert" class="hidden mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-      <h4 class="text-sm font-semibold text-red-800">Vui lòng kiểm tra lại thông tin:</h4>
-      <ul id="error-list" class="mt-2 text-sm text-red-700 list-disc list-inside"></ul>
-    </div>
-
-    <form id="edit-campaign-form" class="mt-6 space-y-6">
+<div class="max-w-2xl mx-auto">
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8"
+       data-controller="campaign-form"
+       data-campaign-form-url-value="/api/v1/campaigns/<%= @campaign.id %>"
+       data-campaign-form-method-value="PATCH"
+       data-campaign-form-submitting-text-value="<%= t('campaigns.edit.saving') %>"
+       data-campaign-form-submit-btn-text-value="<%= t('campaigns.edit.submit_btn') %>"
+       data-campaign-form-failed-text-value="<%= t('campaigns.edit.save_failed') %>"
+       data-campaign-form-network-error-text-value="<%= t('errors.network_error') %>"
+       data-campaign-form-redirect-url-value="<%= campaign_path(@campaign) %>">
+    <div class="flex items-center space-x-3 pb-6 border-b border-gray-100">
+      <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+        </svg>
+      </div>
       <div>
-        <label class="block text-sm font-medium text-gray-500">Tên chiến dịch (Không thể sửa)</label>
+        <h1 class="text-2xl font-bold text-gray-900"><%= t("campaigns.edit.title") %></h1>
+        <p class="text-sm text-gray-500 mt-0.5"><%= t("campaigns.edit.desc") %></p>
+      </div>
+    </div>
+
+    <div id="error-alert"
+         data-campaign-form-target="errorAlert"
+         class="hidden mt-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+      <h4 class="text-sm font-semibold text-red-800"><%= t("errors.check_info") %></h4>
+      <ul id="error-list"
+          data-campaign-form-target="errorList"
+          class="mt-2 text-sm text-red-700 list-disc list-inside space-y-1"></ul>
+    </div>
+
+    <form id="edit-campaign-form"
+          data-action="submit->campaign-form#submit"
+          class="mt-6 space-y-6">
+      <div>
+        <label class="block text-sm font-semibold text-gray-500"><%= t("campaigns.edit.name_label") %></label>
         <input type="text" value="<%= @campaign.name %>" disabled
-               class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed shadow-sm sm:text-sm p-2.5 border" />
+               class="mt-1.5 block w-full rounded-lg border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed shadow-2xs sm:text-sm p-2.5 border" />
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-500">Mục tiêu (Không thể sửa)</label>
+        <label class="block text-sm font-semibold text-gray-500"><%= t("campaigns.edit.objective_label") %></label>
         <input type="text" value="<%= @campaign.objective %>" disabled
-               class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed shadow-sm sm:text-sm p-2.5 border" />
+               class="mt-1.5 block w-full rounded-lg border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed shadow-2xs sm:text-sm p-2.5 border" />
       </div>
 
       <div>
-        <label for="campaign_budget" class="block text-sm font-medium text-gray-700">Ngân sách ($ USD)</label>
-        <input type="number" id="campaign_budget" name="budget" value="<%= @campaign.budget %>" step="0.01" min="1" required
-               class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2.5 border" />
-        <p class="mt-1 text-xs text-indigo-600">Lưu ý: Thay đổi ngân sách sẽ làm sai lệch dữ liệu với các platform đã sync và kích hoạt trạng thái Re-sync.</p>
+        <label for="campaign_budget" class="block text-sm font-semibold text-gray-700"><%= t("campaigns.edit.budget_label") %></label>
+        <input type="number" id="campaign_budget" name="budget" value="<%= @campaign.budget.to_i %>" step="1000" min="1000" required
+               data-campaign-form-target="budgetInput"
+               class="mt-1.5 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 sm:text-sm p-2.5 border transition-colors" />
+        <div class="mt-2 flex items-start space-x-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2.5">
+          <svg class="w-4 h-4 shrink-0 text-amber-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span><%= t("campaigns.edit.budget_warning") %></span>
+        </div>
       </div>
 
       <div class="flex items-center justify-end space-x-3 pt-6 border-t border-gray-100">
-        <%= link_to "Hủy", dashboard_path,
-              class: "px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors" %>
+        <%= link_to t("campaigns.edit.cancel_btn"), campaign_path(@campaign),
+              class: "px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors" %>
         <button type="submit" id="submit-btn"
-                class="px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors cursor-pointer">
-          Cập nhật ngân sách
+                data-campaign-form-target="submitBtn"
+                class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors cursor-pointer">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          <%= t("campaigns.edit.submit_btn") %>
         </button>
       </div>
     </form>
   </div>
 </div>
-
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('edit-campaign-form');
-    const errorAlert = document.getElementById('error-alert');
-    const errorList = document.getElementById('error-list');
-    const submitBtn = document.getElementById('submit-btn');
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      errorAlert.classList.add('hidden');
-      errorList.innerHTML = '';
-      submitBtn.disabled = true;
-
-      const payload = {
-        budget: parseFloat(document.getElementById('campaign_budget').value)
-      };
-
-      try {
-        const response = await fetch('/api/v1/campaigns/<%= @campaign.id %>', {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify(payload)
-        });
-
-        const data = await response.json();
-
-        if (response.ok && data.success) {
-          window.location.href = '<%= dashboard_path %>';
-        } else {
-          submitBtn.disabled = false;
-          errorAlert.classList.remove('hidden');
-          const errors = data.errors || { general: ['Không thể cập nhật ngân sách'] };
-          if (typeof errors === 'object' && !Array.isArray(errors)) {
-            Object.entries(errors).forEach(([field, msgs]) => {
-              const li = document.createElement('li');
-              li.textContent = `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`;
-              errorList.appendChild(li);
-            });
-          } else {
-            const li = document.createElement('li');
-            li.textContent = String(errors);
-            errorList.appendChild(li);
-          }
-        }
-      } catch (err) {
-        submitBtn.disabled = false;
-        errorAlert.classList.remove('hidden');
-        const li = document.createElement('li');
-        li.textContent = 'Lỗi kết nối máy chủ: ' + err.message;
-        errorList.appendChild(li);
-      }
-    });
-  });
-</script>

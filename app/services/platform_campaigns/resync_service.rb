@@ -2,10 +2,13 @@
 
 module PlatformCampaigns
   class ResyncService < ApplicationService
+    include PlatformCampaigns::BroadcastSupport
+
     step :validation
     step :check_resource
     step :detect_drift
     step :mark_sync_status_pending
+    step :broadcast_pending
     step :enqueue_resync_worker
 
     protected
@@ -21,7 +24,7 @@ module PlatformCampaigns
 
     def check_resource(input)
       campaign = Campaign.find_by(id: input[:id])
-      return Failure(campaign: [ "not found" ]) if campaign.nil?
+      return Failure(campaign: [ I18n.t("errors.not_found") ]) if campaign.nil?
 
       account_class = "PlatformAccount::#{input[:platform].to_s.classify}".constantize
       client_class = "Clients::AdCampaign::#{input[:platform].to_s.classify}Client".constantize
@@ -31,7 +34,7 @@ module PlatformCampaigns
                         .where(platform_accounts: { type: account_class.name })
                         .where(id: input[:platform_campaign_id])
 
-      return Failure(platform_campaigns: [ "not found" ]) if records.empty?
+      return Failure(platform_campaigns: [ I18n.t("errors.not_found") ]) if records.empty?
 
       Success(input.merge(campaign: campaign, records: records.to_a))
     end
@@ -40,7 +43,7 @@ module PlatformCampaigns
       drifted_records = input[:records].select(&:drifted?)
 
       if drifted_records.empty? && !input[:force]
-        return Failure(error: "No drift detected between campaign and platform")
+        return Failure(error: I18n.t("platform_campaigns.messages.no_drift_detected"))
       end
 
       target_records = input[:force] ? input[:records] : drifted_records
@@ -68,13 +71,14 @@ module PlatformCampaigns
       Success(input)
     end
 
+    def broadcast_pending(input)
+      broadcast_campaign_updates(input[:campaign])
+      Success(input)
+    end
+
     def enqueue_resync_worker(input)
       input[:target_records].each do |pc|
-        if input[:async] == false
-          SyncCampaignJob.perform_now(pc.id)
-        else
-          SyncCampaignJob.perform_later(pc.id)
-        end
+        SyncCampaignJob.perform_later(pc.id)
       end
 
       reloaded_records = PlatformCampaign.where(id: input[:target_records].map(&:id))

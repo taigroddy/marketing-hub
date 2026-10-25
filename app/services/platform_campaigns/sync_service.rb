@@ -2,6 +2,8 @@
 
 module PlatformCampaigns
   class SyncService < ApplicationService
+    include PlatformCampaigns::BroadcastSupport
+
     step :check_resource
     step :call_platform_api
     step :persist_result
@@ -12,7 +14,7 @@ module PlatformCampaigns
     def check_resource(input)
       id = input[:platform_campaign_id] || input[:id]
       platform_campaign = PlatformCampaign.unscoped.find_by(id: id)
-      return Failure(platform_campaign: [ "not found" ]) unless platform_campaign
+      return Failure(platform_campaign: [ I18n.t("errors.not_found") ]) unless platform_campaign
 
       Success(input.merge(
         platform_campaign: platform_campaign,
@@ -22,7 +24,8 @@ module PlatformCampaigns
     end
 
     def call_platform_api(input)
-      if inside_db_transaction?
+      threshold = Rails.env.test? ? 1 : 0
+      if ActiveRecord::Base.connection.open_transactions > threshold
         raise "Violation: 3rd party API called inside DB transaction"
       end
 
@@ -54,7 +57,7 @@ module PlatformCampaigns
 
       Success(input.merge(api_result: api_result))
     rescue NameError
-      Success(input.merge(api_result: Failure(error: "Unsupported platform: #{platform_name}")))
+      Success(input.merge(api_result: Failure(error: I18n.t("platform_accounts.messages.not_supported"))))
     rescue StandardError, ScriptError => e
       Success(input.merge(api_result: Failure(error: e.message)))
     end
@@ -80,8 +83,10 @@ module PlatformCampaigns
           },
           unique_by: :id
         )
+        campaign = input[:campaign]
+        campaign&.update_columns(status: "published", updated_at: now)
       else
-        error_message = extract_error_message(result.failure)
+        error_message = result.failure.is_a?(Hash) ? (result.failure[:error] || result.failure.values.flatten.join(", ")) : result.failure.to_s
         PlatformCampaign.upsert(
           {
             id: platform_campaign.id,
@@ -101,7 +106,7 @@ module PlatformCampaigns
 
     def broadcast_realtime(input)
       campaign = input[:campaign]
-      broadcast_updates(campaign)
+      broadcast_campaign_updates(campaign)
 
       reloaded_platform_campaign = PlatformCampaign.unscoped.find(input[:platform_campaign].id)
 
@@ -114,48 +119,6 @@ module PlatformCampaigns
       else
         Failure(input[:api_result].failure)
       end
-    end
-
-    private
-
-    def broadcast_updates(campaign)
-      reloaded_campaign = Campaign.unscoped.find(campaign.id)
-      connected_accounts = PlatformAccount.unscoped.where(user_id: reloaded_campaign.user_id).connected
-      ordered_platform_campaigns = PlatformCampaign.unscoped.where(campaign_id: reloaded_campaign.id).includes(:platform_account).order(created_at: :desc)
-
-      Turbo::StreamsChannel.broadcast_replace_to(
-        "campaign_#{reloaded_campaign.id}",
-        target: "platform_accounts_section",
-        partial: "campaigns/platform_accounts_section",
-        locals: {
-          campaign: reloaded_campaign,
-          platform_accounts: connected_accounts,
-          platform_campaigns: ordered_platform_campaigns
-        }
-      )
-
-      Turbo::StreamsChannel.broadcast_replace_to(
-        "campaign_#{reloaded_campaign.id}",
-        target: "platform_campaigns_section",
-        partial: "campaigns/platform_campaigns_section",
-        locals: {
-          campaign: reloaded_campaign,
-          platform_campaigns: ordered_platform_campaigns
-        }
-      )
-    end
-
-    def extract_error_message(failure)
-      if failure.is_a?(Hash)
-        failure[:error] || failure.values.flatten.join(", ")
-      else
-        failure.to_s
-      end
-    end
-
-    def inside_db_transaction?
-      threshold = Rails.env.test? ? 1 : 0
-      ActiveRecord::Base.connection.open_transactions > threshold
     end
   end
 end

@@ -1,15 +1,15 @@
 <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <h2 style="color: #1e293b; font-size: 24px; font-weight: bold; margin-bottom: 16px;">Welcome to Marketing Hub!</h2>
+  <h2 style="color: #1e293b; font-size: 24px; font-weight: bold; margin-bottom: 16px;"><%= t("mailers.user_mailer.welcome") %></h2>
   <p style="color: #475569; font-size: 16px; line-height: 1.5; margin-bottom: 24px;">
-    Please click the button below to confirm your email address and activate your account:
+    <%= t("mailers.user_mailer.instructions") %>
   </p>
   <div style="margin-bottom: 24px;">
     <a href="<%= @confirmation_url %>"
        style="display: inline-block; background-color: #2563eb; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; font-size: 16px;">
-      Confirm My Email
+      <%= t("mailers.user_mailer.confirm_button") %>
     </a>
   </div>
   <p style="color: #94a3b8; font-size: 14px; line-height: 1.5;">
-    If you did not create an account, no further action is required.
+    <%= t("mailers.user_mailer.ignore_notice") %>
   </p>
 </div>

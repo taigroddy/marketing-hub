@@ -10,8 +10,8 @@ module Campaigns
     end
 
     rule(:status) do
-      if value.present? && !%w[draft active paused completed].include?(value)
-        key.failure("is not included in the list")
+      if value.present? && !%w[draft published active paused completed].include?(value)
+        key.failure(:not_in_list)
       end
     end
   end

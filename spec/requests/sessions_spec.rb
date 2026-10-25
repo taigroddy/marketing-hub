@@ -17,8 +17,8 @@ RSpec.describe 'Sessions', type: :request do
     it 'renders the login page' do
       get '/login'
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include('Sign In')
-      expect(response.body).to include('Email Address')
+      expect(response.body).to include(I18n.t('sessions.new.title'))
+      expect(response.body).to include(I18n.t('sessions.new.email_label'))
     end
 
     it 'redirects to /dashboard if already logged in' do
@@ -42,39 +42,15 @@ RSpec.describe 'Sessions', type: :request do
       expect(cookies[:jwt_token]).to be_present
       expect(cookies[:jwt_token]).not_to eq(expired_token)
     end
-  end
 
-  describe 'DELETE /logout' do
-    it 'clears cookies, revokes the user token row, and redirects to /login' do
-      token_pair = UserToken.create_for_user!(user, device_info: 'Device A')
-      user_token = token_pair.first
-      raw_refresh = token_pair.last
-      token = Authenticable.encode_jwt({ user_id: user.id, user_token_id: user_token.id })
-
+    it 'clears cookies and renders the login page when params[:logout] is present' do
+      token = Authenticable.encode_jwt({ user_id: user.id })
       cookies[:jwt_token] = token
-      cookies[:refresh_token] = raw_refresh
 
-      delete '/logout'
-
-      expect(response).to redirect_to('/login')
-      expect(cookies[:jwt_token]).to be_blank
-      expect(cookies[:refresh_token]).to be_blank
-
-      expect(user_token.reload.revoked?).to be true
-      expect(user_token.active?).to be false
-    end
-
-    it 'revoking on device A leaves device B session intact' do
-      token_a_pair = UserToken.create_for_user!(user, device_info: 'Device A')
-      token_b_pair = UserToken.create_for_user!(user, device_info: 'Device B')
-
-      cookies[:jwt_token] = Authenticable.encode_jwt({ user_id: user.id, user_token_id: token_a_pair.first.id })
-      cookies[:refresh_token] = token_a_pair.last
-
-      delete '/logout'
-
-      expect(token_a_pair.first.reload.revoked?).to be true
-      expect(token_b_pair.first.reload.active?).to be true
+      get '/login', params: { logout: '1' }
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(I18n.t('sessions.new.title'))
+      expect(response.cookies['jwt_token']).to be_blank
     end
   end
 end

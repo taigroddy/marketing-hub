@@ -9,12 +9,12 @@ module Auth
     end
 
     rule(:email) do
-      key.failure("is invalid") unless URI::MailTo::EMAIL_REGEXP.match?(value)
+      key.failure(:invalid) unless URI::MailTo::EMAIL_REGEXP.match?(value)
     end
 
     rule(:password_confirmation, :password) do
       if values[:password_confirmation].present? && values[:password] != values[:password_confirmation]
-        key(:password_confirmation).failure("must match password")
+        key(:password_confirmation).failure(:must_match_password)
       end
     end
   end

@@ -9,7 +9,7 @@ module Auth
     end
 
     rule(:email) do
-      key.failure("is invalid") unless URI::MailTo::EMAIL_REGEXP.match?(value)
+      key.failure(:invalid) unless URI::MailTo::EMAIL_REGEXP.match?(value)
     end
   end
 end

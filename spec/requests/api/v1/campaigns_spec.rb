@@ -95,7 +95,7 @@ RSpec.describe "Api::V1::Campaigns", type: :request do
           json = JSON.parse(response.body)
           expect(json["success"]).to be false
           expect(json["data"]).to be_nil
-          expect(json["errors"]).to eq("Unauthorized")
+          expect(json["errors"]).to eq(I18n.t("errors.unauthorized"))
         end
       end
     end
@@ -164,7 +164,7 @@ RSpec.describe "Api::V1::Campaigns", type: :request do
           json = JSON.parse(response.body)
           expect(json["success"]).to be false
           expect(json["data"]).to be_nil
-          expect(json["errors"]).to eq("Unauthorized")
+          expect(json["errors"]).to eq(I18n.t("errors.unauthorized"))
         end
       end
 
@@ -240,11 +240,11 @@ RSpec.describe "Api::V1::Campaigns", type: :request do
           json = JSON.parse(response.body)
           expect(json["success"]).to be false
           expect(json["data"]).to be_nil
-          expect(json["errors"]).to eq("Unauthorized")
+          expect(json["errors"]).to eq(I18n.t("errors.unauthorized"))
         end
       end
 
-      response 404, "Campaign not found" do
+      response 404, "Record not found" do
         schema type: :object,
                properties: {
                  success: { type: :boolean, example: false },
@@ -260,7 +260,7 @@ RSpec.describe "Api::V1::Campaigns", type: :request do
           json = JSON.parse(response.body)
           expect(json["success"]).to be false
           expect(json["data"]).to be_nil
-          expect(json["errors"]).to eq("Campaign not found")
+          expect(json["errors"]).to eq(I18n.t("errors.not_found"))
         end
       end
     end
@@ -323,11 +323,11 @@ RSpec.describe "Api::V1::Campaigns", type: :request do
           json = JSON.parse(response.body)
           expect(json["success"]).to be false
           expect(json["data"]).to be_nil
-          expect(json["errors"]).to eq("Unauthorized")
+          expect(json["errors"]).to eq(I18n.t("errors.unauthorized"))
         end
       end
 
-      response 404, "Campaign not found" do
+      response 404, "Record not found" do
         schema type: :object,
                properties: {
                  success: { type: :boolean, example: false },
@@ -344,7 +344,7 @@ RSpec.describe "Api::V1::Campaigns", type: :request do
           json = JSON.parse(response.body)
           expect(json["success"]).to be false
           expect(json["data"]).to be_nil
-          expect(json["errors"]).to eq("Campaign not found")
+          expect(json["errors"]).to eq(I18n.t("errors.not_found"))
         end
       end
 
@@ -415,7 +415,7 @@ RSpec.describe "Api::V1::Campaigns", type: :request do
       json = JSON.parse(response.body)
       expect(json["success"]).to be false
       expect(json["data"]).to be_nil
-      expect(json["errors"]).to eq("Campaign not found")
+      expect(json["errors"]).to eq(I18n.t("errors.not_found"))
     end
 
     it "returns 404 when updating another user campaign budget" do
@@ -428,7 +428,19 @@ RSpec.describe "Api::V1::Campaigns", type: :request do
       json = JSON.parse(response.body)
       expect(json["success"]).to be false
       expect(json["data"]).to be_nil
-      expect(json["errors"]).to eq("Campaign not found")
+      expect(json["errors"]).to eq(I18n.t("errors.not_found"))
+    end
+
+    it "returns localized 404 error message when Accept-Language is en" do
+      get "/api/v1/campaigns/999999",
+          headers: headers_a.merge("Accept-Language" => "en-US,en;q=0.9"),
+          as: :json
+
+      expect(response).to have_http_status(:not_found)
+      json = JSON.parse(response.body)
+      expect(json["success"]).to be false
+      expect(json["data"]).to be_nil
+      expect(json["errors"]).to eq("Record not found")
     end
   end
 end

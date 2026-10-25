@@ -7,7 +7,6 @@ module PlatformCampaigns
       required(:platform).filled(:string, included_in?: %w[facebook google])
       required(:platform_campaign_id).filled(:integer)
       optional(:force).maybe(:bool)
-      optional(:async).maybe(:bool)
     end
   end
 end

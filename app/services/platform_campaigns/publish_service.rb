@@ -2,9 +2,12 @@
 
 module PlatformCampaigns
   class PublishService < ApplicationService
+    include PlatformCampaigns::BroadcastSupport
+
     step :validation
     step :check_resource
     step :persist_platform_campaigns
+    step :broadcast_pending
     step :enqueue_sync_workers
 
     protected
@@ -20,7 +23,7 @@ module PlatformCampaigns
 
     def check_resource(input)
       campaign = Campaign.find_by(id: input[:id])
-      return Failure(campaign: [ "not found" ]) if campaign.nil?
+      return Failure(campaign: [ I18n.t("errors.not_found") ]) if campaign.nil?
 
       account_class = "PlatformAccount::#{input[:platform].to_s.classify}".constantize
       client_class = "Clients::AdCampaign::#{input[:platform].to_s.classify}Client".constantize
@@ -28,7 +31,7 @@ module PlatformCampaigns
 
       accounts = account_class.where(id: input[:platform_account_ids]).to_a
       if accounts.size != input[:platform_account_ids].size
-        return Failure(platform_accounts: [ "invalid or not found" ])
+        return Failure(platform_accounts: [ I18n.t("errors.not_found") ])
       end
 
       already_published = PlatformCampaign.where(
@@ -37,7 +40,7 @@ module PlatformCampaigns
       ).exists?
 
       if already_published
-        return Failure(platform_account_ids: [ "already published for this campaign" ])
+        return Failure(platform_account_ids: [ I18n.t("errors.conflict_published") ])
       end
 
       Success(input.merge(campaign: campaign, accounts: accounts))
@@ -58,28 +61,29 @@ module PlatformCampaigns
         }
       end
 
-      PlatformCampaign.upsert_all(records_data, unique_by: [ :campaign_id, :platform_account_id ])
-
-      platform_campaigns = PlatformCampaign.where(
-        campaign_id: campaign.id,
-        platform_account_id: accounts.map(&:id)
-      ).to_a
+      platform_campaigns = nil
+      ActiveRecord::Base.transaction do
+        platform_campaigns = PlatformCampaign.upsert_all(records_data, unique_by: [ :campaign_id, :platform_account_id ], returning: [ :id ])
+        campaign.update!(status: "published")
+      end
 
       Success(input.merge(platform_campaigns: platform_campaigns))
     end
 
+    def broadcast_pending(input)
+      broadcast_campaign_updates(input[:campaign])
+      Success(input)
+    end
+
     def enqueue_sync_workers(input)
       platform_campaigns = input[:platform_campaigns]
+      ids = platform_campaigns.map { |pc| pc.is_a?(Hash) ? (pc["id"] || pc[:id]) : pc.id }
 
-      platform_campaigns.each do |pc|
-        if input[:async] == false
-          SyncCampaignJob.perform_now(pc.id)
-        else
-          SyncCampaignJob.perform_later(pc.id)
-        end
+      ids.each do |id|
+        SyncCampaignJob.perform_later(id)
       end
 
-      final_records = PlatformCampaign.where(id: platform_campaigns.map(&:id))
+      final_records = PlatformCampaign.where(id: ids)
       Success(campaign: input[:campaign], platform_campaigns: final_records)
     end
   end

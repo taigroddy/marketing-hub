@@ -21,7 +21,7 @@ module Auth
     def check_resource(input)
       normalized_email = input[:email].to_s.strip.downcase
       if User.where("lower(email) = ?", normalized_email).exists?
-        Failure(email: [ "has already been taken" ])
+        Failure(email: [ I18n.t("services.auth.email_taken") ])
       else
         Success(input.merge(email: normalized_email))
       end

@@ -9,8 +9,8 @@ RSpec.describe 'Registrations', type: :request do
     it 'renders the registration form' do
       get '/register'
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include('Create Account')
-      expect(response.body).to include('Email Address')
+      expect(response.body).to include(I18n.t('registrations.new.title'))
+      expect(response.body).to include(I18n.t('registrations.new.email_label'))
     end
 
     it 'redirects to /dashboard if already logged in' do

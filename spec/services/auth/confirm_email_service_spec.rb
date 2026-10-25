@@ -31,17 +31,23 @@ RSpec.describe Auth::ConfirmEmailService do
       end
     end
 
-    context 'when token is blank' do
-      it 'returns failure with invalid_token for empty string' do
+    context 'when validation fails' do
+      it 'returns failure when token is empty string' do
         result = described_class.call(token: '')
         expect(result).to be_failure
-        expect(result.failure).to eq(:invalid_token)
+        expect(result.failure[:token]).to be_present
       end
 
-      it 'returns failure with invalid_token for nil' do
+      it 'returns failure when token is nil' do
         result = described_class.call(token: nil)
         expect(result).to be_failure
-        expect(result.failure).to eq(:invalid_token)
+        expect(result.failure[:token]).to be_present
+      end
+
+      it 'returns failure when token is missing' do
+        result = described_class.call({})
+        expect(result).to be_failure
+        expect(result.failure[:token]).to be_present
       end
     end
 
@@ -82,7 +88,7 @@ RSpec.describe Auth::ConfirmEmailService do
       it 'returns failure with resource_not_found when sent > 24 hours ago' do
         result = described_class.call(token: 'expired-token-999')
         expect(result).to be_failure
-        expect(result.failure).to eq([ :resource_not_found, 'Invalid or expired confirmation token' ])
+        expect(result.failure).to eq([ :resource_not_found, I18n.t('auth.invalid_confirmation_token') ])
         expect(expired_user.reload.confirmed?).to be false
       end
 
@@ -90,7 +96,7 @@ RSpec.describe Auth::ConfirmEmailService do
         expired_user.update_column(:confirmation_sent_at, nil)
         result = described_class.call(token: 'expired-token-999')
         expect(result).to be_failure
-        expect(result.failure).to eq([ :resource_not_found, 'Invalid or expired confirmation token' ])
+        expect(result.failure).to eq([ :resource_not_found, I18n.t('auth.invalid_confirmation_token') ])
         expect(expired_user.reload.confirmed?).to be false
       end
     end

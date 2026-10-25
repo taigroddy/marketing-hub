@@ -45,7 +45,7 @@ RSpec.describe "Api::V1::Auth", type: :request do
           json = JSON.parse(response.body)
           expect(json["success"]).to be true
           expect(json["errors"]).to be_nil
-          expect(json["data"]["message"]).to include("Registration successful")
+          expect(json["data"]["message"]).to eq(I18n.t("auth.registration_success"))
           expect(json["data"]["user"]["email"]).to eq("api-user@example.com")
           expect(json["data"]["user"]).not_to have_key("password_digest")
           expect(json["data"]["user"]).not_to have_key("confirmation_token")
@@ -95,7 +95,7 @@ RSpec.describe "Api::V1::Auth", type: :request do
       json = JSON.parse(response.body)
       expect(json["success"]).to be false
       expect(json["data"]).to be_nil
-      expect(json["errors"]["email"]).to include("has already been taken")
+      expect(json["errors"]["email"]).to include(I18n.t("services.auth.email_taken"))
     end
   end
 
@@ -149,8 +149,8 @@ RSpec.describe "Api::V1::Auth", type: :request do
           expect(json["data"]["user"]["email"]).to eq("login-user@example.com")
           decoded = Authenticable.decode_jwt(json["data"]["token"])
           expect(decoded[:user_id]).to eq(user.id)
-          expect(cookies[:jwt_token]).to be_present
-          expect(cookies[:refresh_token]).to be_present
+          expect(cookies[:jwt_token]).to be_nil
+          expect(cookies[:refresh_token]).to be_nil
         end
       end
 
@@ -169,7 +169,7 @@ RSpec.describe "Api::V1::Auth", type: :request do
           json = JSON.parse(response.body)
           expect(json["success"]).to be false
           expect(json["data"]).to be_nil
-          expect(json["errors"]).to include("Invalid email or password")
+          expect(json["errors"]).to eq(I18n.t("auth.invalid_credentials"))
         end
       end
 
@@ -195,7 +195,7 @@ RSpec.describe "Api::V1::Auth", type: :request do
           json = JSON.parse(response.body)
           expect(json["success"]).to be false
           expect(json["data"]).to be_nil
-          expect(json["errors"]).to include("confirm your email")
+          expect(json["errors"]).to eq(I18n.t("auth.unconfirmed_email"))
         end
       end
 
@@ -287,7 +287,7 @@ RSpec.describe "Api::V1::Auth", type: :request do
           json = JSON.parse(response.body)
           expect(json["success"]).to be false
           expect(json["data"]).to be_nil
-          expect(json["errors"]).to include("Invalid or expired")
+          expect(json["errors"]).to eq(I18n.t("auth.invalid_refresh_token"))
         end
       end
 
@@ -355,7 +355,7 @@ RSpec.describe "Api::V1::Auth", type: :request do
           json = JSON.parse(response.body)
           expect(json["success"]).to be true
           expect(json["errors"]).to be_nil
-          expect(json["data"]["message"]).to eq("Logged out successfully.")
+          expect(json["data"]["message"]).to eq(I18n.t("auth.logout_success"))
           expect(token_pair.first.reload.revoked?).to be true
         end
       end
@@ -375,7 +375,7 @@ RSpec.describe "Api::V1::Auth", type: :request do
           json = JSON.parse(response.body)
           expect(json["success"]).to be false
           expect(json["data"]).to be_nil
-          expect(json["errors"]).to include("Invalid or expired")
+          expect(json["errors"]).to eq(I18n.t("auth.invalid_token"))
         end
       end
 
@@ -438,7 +438,7 @@ RSpec.describe "Api::V1::Auth", type: :request do
           expect(json["success"]).to be true
           expect(json["errors"]).to be_nil
           expect(json["data"]["token"]).to be_present
-          expect(json["data"]["message"]).to include("Email confirmed successfully")
+          expect(json["data"]["message"]).to eq(I18n.t("auth.email_confirmed"))
           expect(user.reload.confirmed?).to be true
           expect(user.confirmation_token).to be_nil
         end
@@ -459,7 +459,7 @@ RSpec.describe "Api::V1::Auth", type: :request do
           json = JSON.parse(response.body)
           expect(json["success"]).to be false
           expect(json["data"]).to be_nil
-          expect(json["errors"]).to include("Invalid or expired")
+          expect(json["errors"]).to eq(I18n.t("auth.invalid_confirmation_token"))
         end
       end
     end
@@ -519,7 +519,7 @@ RSpec.describe "Api::V1::Auth", type: :request do
           json = JSON.parse(response.body)
           expect(json["success"]).to be false
           expect(json["data"]).to be_nil
-          expect(json["errors"]).to eq("Unauthorized")
+          expect(json["errors"]).to eq(I18n.t("errors.unauthorized"))
         end
       end
     end
@@ -617,6 +617,27 @@ RSpec.describe "Api::V1::Auth", type: :request do
            params: { refresh_token: new_refresh_b },
            as: :json
       expect(response).to have_http_status(:ok)
+    end
+
+    it "logs out successfully using Authorization Bearer token without refresh_token in request body" do
+      post "/api/v1/auth/login",
+           params: { email: user.email, password: "Password123!" },
+           as: :json
+      expect(response).to have_http_status(:ok)
+      auth_data = JSON.parse(response.body)["data"]
+      jwt_token = auth_data["token"]
+      decoded = Authenticable.decode_jwt(jwt_token)
+      user_token = UserToken.find(decoded[:user_token_id])
+
+      post "/api/v1/auth/logout",
+           headers: { "Authorization" => "Bearer #{jwt_token}" },
+           params: {},
+           as: :json
+
+      expect(response).to have_http_status(:ok)
+      json = JSON.parse(response.body)
+      expect(json["success"]).to be true
+      expect(user_token.reload.revoked?).to be true
     end
 
     it "safely truncates User-Agent headers longer than 255 characters on login and refresh" do

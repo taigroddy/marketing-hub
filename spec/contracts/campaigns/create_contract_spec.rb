@@ -19,7 +19,7 @@ RSpec.describe Campaigns::CreateContract do
   end
 
   it 'passes with valid status provided' do
-    %w[draft active paused completed].each do |status|
+    %w[draft published active paused completed].each do |status|
       result = contract.call(valid_params.merge(status: status))
       expect(result).to be_success
     end
@@ -43,6 +43,6 @@ RSpec.describe Campaigns::CreateContract do
   it 'fails when status is invalid' do
     result = contract.call(valid_params.merge(status: 'invalid_status'))
     expect(result).to be_failure
-    expect(result.errors[:status]).to include('is not included in the list')
+    expect(result.errors[:status]).to include(I18n.t('dry_validation.errors.rules.status.not_in_list'))
   end
 end

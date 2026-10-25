@@ -43,6 +43,16 @@ RSpec.describe Auth::LogoutService do
       end
     end
 
+    context 'with a valid active user_token_id' do
+      it 'revokes the token row and succeeds' do
+        result = described_class.call(user_token_id: user_token.id)
+
+        expect(result).to be_success
+        expect(result.value![:user_token].id).to eq(user_token.id)
+        expect(user_token.reload.revoked?).to be true
+      end
+    end
+
     context 'when validation fails' do
       it 'returns failure when refresh_token is missing' do
         result = described_class.call({})

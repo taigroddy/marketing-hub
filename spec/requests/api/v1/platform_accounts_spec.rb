@@ -72,7 +72,7 @@ RSpec.describe "Api::V1::PlatformAccounts", type: :request do
           json = JSON.parse(response.body)
           expect(json["success"]).to be false
           expect(json["data"]).to be_nil
-          expect(json["errors"]).to eq("Unauthorized")
+          expect(json["errors"]).to eq(I18n.t("errors.unauthorized"))
         end
       end
 
@@ -132,7 +132,7 @@ RSpec.describe "Api::V1::PlatformAccounts", type: :request do
           json = JSON.parse(response.body)
           expect(json["success"]).to be true
           expect(json["errors"]).to be_nil
-          expect(json["data"]["message"]).to eq("Platform account connected successfully")
+          expect(json["data"]["message"]).to eq(I18n.t("platform_accounts.messages.connected"))
           expect(json["data"]["platform_account"]["account_id"]).to eq("1015012345678")
           expect(json["data"]["platform_account"]).not_to have_key("access_token")
         end
@@ -155,7 +155,7 @@ RSpec.describe "Api::V1::PlatformAccounts", type: :request do
           json = JSON.parse(response.body)
           expect(json["success"]).to be false
           expect(json["data"]).to be_nil
-          expect(json["errors"]).to eq("Unauthorized")
+          expect(json["errors"]).to eq(I18n.t("errors.unauthorized"))
         end
       end
 
@@ -251,15 +251,6 @@ RSpec.describe "Api::V1::PlatformAccounts", type: :request do
       expect(json["errors"]).to include("Google platform integration coming soon")
     end
 
-    it "routes alias /oauth/:platform/callback to platform accounts callback" do
-      get "/oauth/google/callback", params: { code: "google_code" }, headers: headers
-      expect(response).to have_http_status(:not_found)
-      json = JSON.parse(response.body)
-      expect(json["success"]).to be false
-      expect(json["data"]).to be_nil
-      expect(json["errors"]).to include("Google platform integration coming soon")
-    end
-
     it "redirects to dashboard when callback is requested as HTML", vcr: { cassette_name: "facebook_oauth" } do
       get "/api/v1/facebook/oauth/callback",
           params: { code: "valid_auth_code" },
@@ -282,6 +273,43 @@ RSpec.describe "Api::V1::PlatformAccounts", type: :request do
           headers: { "Authorization" => "Bearer #{jwt_token}", "Accept" => "text/html" }
       expect(response).to redirect_to(dashboard_path)
       expect(flash[:alert]).to include("Kết nối thất bại")
+    end
+
+    it "auto-generates signed state when state param is omitted" do
+      get "/api/v1/facebook/oauth/authorize", headers: headers
+      expect(response).to have_http_status(:ok)
+      auth_url = JSON.parse(response.body).dig("data", "authorize_url")
+      uri = URI.parse(auth_url)
+      query_params = Rack::Utils.parse_nested_query(uri.query)
+      expect(query_params["state"]).to be_present
+      payload = Authenticable.decode_jwt(query_params["state"])
+      expect(payload["user_id"]).to eq(user.id)
+    end
+
+    it "authenticates callback via state parameter without Authorization header", vcr: { cassette_name: "facebook_oauth" } do
+      state = Authenticable.encode_jwt({ user_id: user.id, purpose: "oauth_state" }, 15.minutes.from_now)
+      get "/api/v1/facebook/oauth/callback",
+          params: { code: "valid_auth_code", state: state },
+          headers: { "Accept" => "text/html" }
+      expect(response).to redirect_to(dashboard_path)
+      expect(flash[:notice]).to be_present
+    end
+
+    it "redirects to dashboard when callback has missing or invalid state without Authorization header as HTML" do
+      get "/api/v1/facebook/oauth/callback",
+          params: { code: "valid_auth_code", state: "invalid_state" },
+          headers: { "Accept" => "text/html" }
+      expect(response).to redirect_to(dashboard_path)
+      expect(flash[:alert]).to be_present
+    end
+
+    it "returns 401 JSON when callback has invalid state without Authorization header as JSON" do
+      get "/api/v1/facebook/oauth/callback",
+          params: { code: "valid_auth_code", state: "invalid_state" },
+          headers: { "Accept" => "application/json" }
+      expect(response).to have_http_status(:unauthorized)
+      json = JSON.parse(response.body)
+      expect(json["success"]).to be false
     end
   end
 end

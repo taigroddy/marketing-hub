@@ -2,9 +2,7 @@
 
 module Api
   module V1
-    class PlatformCampaignsController < ApplicationController
-      skip_before_action :verify_authenticity_token, raise: false
-      skip_before_action :allow_browser, raise: false
+    class PlatformCampaignsController < Api::BaseController
       before_action :authenticate_user!
 
       rescue_from NameError, NotImplementedError, with: :handle_platform_error
@@ -16,7 +14,7 @@ module Api
               success: true,
               data: {
                 platform_campaigns: PlatformCampaignBlueprint.render_as_hash(result[:platform_campaigns]),
-                message: "Campaign publish initiated successfully"
+                message: I18n.t("platform_campaigns.messages.publish_initiated")
               },
               errors: nil
             }, status: :ok
@@ -27,7 +25,18 @@ module Api
           end
 
           m.failure(:check_resource) do |error|
-            render_publish_check_resource_failure(error)
+            status, message = if !error.is_a?(Hash)
+                                [ :unauthorized, I18n.t("errors.unauthorized", default: "Unauthorized") ]
+            elsif error[:campaign] || error[:platform_accounts]
+                                [ :not_found, I18n.t("errors.not_found", default: "Record not found") ]
+            elsif error[:platform_account_ids]
+                                [ :conflict, I18n.t("errors.conflict_published", default: "Already published for this campaign") ]
+            elsif error[:error]
+                                [ :unprocessable_content, error[:error] ]
+            else
+                                [ :unprocessable_content, extract_error_message(error) ]
+            end
+            render json: { success: false, data: nil, errors: message }, status: status
           end
 
           m.failure do |error|
@@ -43,7 +52,7 @@ module Api
               success: true,
               data: {
                 platform_campaigns: PlatformCampaignBlueprint.render_as_hash(result[:platform_campaigns]),
-                message: "Campaign resync initiated successfully"
+                message: I18n.t("platform_campaigns.messages.resync_initiated")
               },
               errors: nil
             }, status: :ok
@@ -54,7 +63,14 @@ module Api
           end
 
           m.failure(:check_resource) do |error|
-            render_resync_check_resource_failure(error)
+            status, message = if !error.is_a?(Hash)
+                                [ :unauthorized, I18n.t("errors.unauthorized", default: "Unauthorized") ]
+            elsif error[:campaign] || error[:platform_campaigns]
+                                [ :not_found, I18n.t("errors.not_found", default: "Record not found") ]
+            else
+                                [ :unprocessable_content, extract_error_message(error) ]
+            end
+            render json: { success: false, data: nil, errors: message }, status: status
           end
 
           m.failure(:detect_drift) do |error|
@@ -73,50 +89,8 @@ module Api
         render json: {
           success: false,
           data: nil,
-          errors: exception.message.presence || "Platform not supported"
+          errors: exception.message.presence || I18n.t("platform_accounts.messages.not_supported")
         }, status: :not_found
-      end
-
-      def render_unauthorized(message = "Unauthorized")
-        render json: { success: false, data: nil, errors: message }, status: :unauthorized
-      end
-
-      def render_publish_check_resource_failure(error)
-        status, message = publish_check_resource_status_and_message(error)
-        render json: { success: false, data: nil, errors: message }, status: status
-      end
-
-      def publish_check_resource_status_and_message(error)
-        return [ :unauthorized, "Unauthorized" ] unless error.is_a?(Hash)
-
-        if error[:campaign]
-          [ :not_found, "Campaign not found" ]
-        elsif error[:platform_accounts]
-          [ :not_found, "Platform account not found" ]
-        elsif error[:platform_account_ids]
-          [ :conflict, "Already published for this campaign" ]
-        elsif error[:error]
-          [ :unprocessable_content, error[:error] ]
-        else
-          [ :unprocessable_content, extract_error_message(error) ]
-        end
-      end
-
-      def render_resync_check_resource_failure(error)
-        status, message = resync_check_resource_status_and_message(error)
-        render json: { success: false, data: nil, errors: message }, status: status
-      end
-
-      def resync_check_resource_status_and_message(error)
-        return [ :unauthorized, "Unauthorized" ] unless error.is_a?(Hash)
-
-        if error[:campaign]
-          [ :not_found, "Campaign not found" ]
-        elsif error[:platform_campaigns]
-          [ :not_found, "Platform campaign not found" ]
-        else
-          [ :unprocessable_content, extract_error_message(error) ]
-        end
       end
 
       def extract_error_message(error)

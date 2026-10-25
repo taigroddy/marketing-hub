@@ -2,9 +2,7 @@
 
 module Api
   module V1
-    class AuthController < ApplicationController
-      skip_before_action :verify_authenticity_token, raise: false
-      skip_before_action :allow_browser, raise: false
+    class AuthController < Api::BaseController
       before_action :authenticate_user!, only: [ :me ]
 
       def register
@@ -13,7 +11,7 @@ module Api
             render json: {
               success: true,
               data: {
-                message: "Registration successful. Please check your email to confirm your account.",
+                message: I18n.t("auth.registration_success"),
                 user: UserBlueprint.render_as_hash(data[:user])
               },
               errors: nil
@@ -34,21 +32,6 @@ module Api
         params_with_device = full_request_params.merge(device_info: request.user_agent)
         Auth::LoginService.call(params_with_device) do |m|
           m.success do |data|
-            cookies[:jwt_token] = {
-              value: data[:token],
-              httponly: true,
-              secure: Rails.env.production?,
-              same_site: :lax,
-              expires: 1.hour.from_now
-            }
-            cookies[:refresh_token] = {
-              value: data[:refresh_token],
-              httponly: true,
-              secure: Rails.env.production?,
-              same_site: :lax,
-              expires: 30.days.from_now
-            }
-
             render json: {
               success: true,
               data: {
@@ -90,21 +73,22 @@ module Api
           end
 
           m.failure do |_error|
-            render json: { success: false, data: nil, errors: "Invalid or expired refresh token." }, status: :unauthorized
+            render json: { success: false, data: nil, errors: I18n.t("auth.invalid_refresh_token") }, status: :unauthorized
           end
         end
       end
 
       def logout
-        refresh_token = full_request_params[:refresh_token] || cookies[:refresh_token] || cookies["refresh_token"]
-        cookies.delete(:jwt_token, secure: Rails.env.production?, same_site: :lax)
-        cookies.delete(:refresh_token, secure: Rails.env.production?, same_site: :lax)
+        logout_params = full_request_params
+        if logout_params[:refresh_token].blank? && current_user_token_id.present?
+          logout_params = logout_params.merge(user_token_id: current_user_token_id)
+        end
 
-        Auth::LogoutService.call(full_request_params.merge(refresh_token: refresh_token)) do |m|
+        Auth::LogoutService.call(logout_params) do |m|
           m.success do |_data|
             render json: {
               success: true,
-              data: { message: "Logged out successfully." },
+              data: { message: I18n.t("auth.logout_success") },
               errors: nil
             }, status: :ok
           end
@@ -114,7 +98,7 @@ module Api
           end
 
           m.failure do |_error|
-            render json: { success: false, data: nil, errors: "Invalid or expired refresh token." }, status: :unauthorized
+            render json: { success: false, data: nil, errors: I18n.t("auth.invalid_token") }, status: :unauthorized
           end
         end
       end
@@ -127,18 +111,18 @@ module Api
               data: {
                 token: data[:token],
                 user: UserBlueprint.render_as_hash(data[:user]),
-                message: "Email confirmed successfully."
+                message: I18n.t("auth.email_confirmed")
               },
               errors: nil
             }, status: :ok
           end
 
           m.failure(:validation) do |_errors|
-            render json: { success: false, data: nil, errors: "Invalid or expired confirmation token." }, status: :unprocessable_entity
+            render json: { success: false, data: nil, errors: I18n.t("auth.invalid_confirmation_token") }, status: :unprocessable_entity
           end
 
           m.failure do |_error|
-            render json: { success: false, data: nil, errors: "Invalid or expired confirmation token." }, status: :unprocessable_entity
+            render json: { success: false, data: nil, errors: I18n.t("auth.invalid_confirmation_token") }, status: :unprocessable_entity
           end
         end
       end
@@ -156,16 +140,12 @@ module Api
       def handle_login_failure(failure)
         case failure
         when :unconfirmed_email
-          render json: { success: false, data: nil, errors: "Please confirm your email address before logging in." }, status: :forbidden
+          render json: { success: false, data: nil, errors: I18n.t("auth.unconfirmed_email") }, status: :forbidden
         when :invalid_credentials
-          render json: { success: false, data: nil, errors: "Invalid email or password." }, status: :unauthorized
+          render json: { success: false, data: nil, errors: I18n.t("auth.invalid_credentials") }, status: :unauthorized
         else
           render json: { success: false, data: nil, errors: failure }, status: :unprocessable_entity
         end
-      end
-
-      def render_unauthorized(message = "Unauthorized")
-        render json: { success: false, data: nil, errors: message }, status: :unauthorized
       end
     end
   end

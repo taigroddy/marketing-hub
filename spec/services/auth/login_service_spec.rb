@@ -94,7 +94,7 @@ RSpec.describe Auth::LoginService do
         result = described_class.call(email: 'not-valid', password: 'Password123!')
 
         expect(result).to be_failure
-        expect(result.failure[:email]).to include('is invalid')
+        expect(result.failure[:email]).to include(I18n.t('dry_validation.errors.rules.email.invalid'))
       end
 
       it 'returns failure when password is blank' do

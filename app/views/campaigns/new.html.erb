@@ -1,110 +1,78 @@
-<div class="max-w-2xl mx-auto py-8">
-  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
-    <div class="pb-6 border-b border-gray-100">
-      <h1 class="text-2xl font-bold text-gray-900">Tạo Campaign Mới</h1>
-      <p class="text-sm text-gray-500 mt-1">Điền thông tin chiến dịch để chuẩn bị đồng bộ lên các nền tảng quảng cáo.</p>
-    </div>
+<% content_for :title, "#{t('campaigns.new.title')} - #{t('navbar.brand')}" %>
 
-    <div id="error-alert" class="hidden mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-      <h4 class="text-sm font-semibold text-red-800">Vui lòng kiểm tra lại thông tin:</h4>
-      <ul id="error-list" class="mt-2 text-sm text-red-700 list-disc list-inside"></ul>
-    </div>
-
-    <form id="create-campaign-form" class="mt-6 space-y-6">
+<div class="max-w-2xl mx-auto">
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8"
+       data-controller="campaign-form"
+       data-campaign-form-url-value="/api/v1/campaigns"
+       data-campaign-form-method-value="POST"
+       data-campaign-form-submitting-text-value="<%= t('campaigns.new.creating') %>"
+       data-campaign-form-submit-btn-text-value="<%= t('campaigns.new.submit_btn') %>"
+       data-campaign-form-failed-text-value="<%= t('campaigns.new.create_failed') %>"
+       data-campaign-form-network-error-text-value="<%= t('errors.network_error') %>">
+    <div class="flex items-center space-x-3 pb-6 border-b border-gray-100">
+      <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+      </div>
       <div>
-        <label for="campaign_name" class="block text-sm font-medium text-gray-700">Tên chiến dịch</label>
+        <h1 class="text-2xl font-bold text-gray-900"><%= t("campaigns.new.title") %></h1>
+        <p class="text-sm text-gray-500 mt-0.5"><%= t("campaigns.new.desc") %></p>
+      </div>
+    </div>
+
+    <div id="error-alert"
+         data-campaign-form-target="errorAlert"
+         class="hidden mt-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+      <h4 class="text-sm font-semibold text-red-800"><%= t("errors.check_info") %></h4>
+      <ul id="error-list"
+          data-campaign-form-target="errorList"
+          class="mt-2 text-sm text-red-700 list-disc list-inside space-y-1"></ul>
+    </div>
+
+    <form id="create-campaign-form"
+          data-action="submit->campaign-form#submit"
+          class="mt-6 space-y-6">
+      <div>
+        <label for="campaign_name" class="block text-sm font-semibold text-gray-700"><%= t("campaigns.new.name_label") %></label>
         <input type="text" id="campaign_name" name="name" required
-               placeholder="Ví dụ: Summer Promotion 2026"
-               class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2.5 border" />
+               data-campaign-form-target="nameInput"
+               placeholder="<%= t("campaigns.new.name_placeholder") %>"
+               class="mt-1.5 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 sm:text-sm p-2.5 border transition-colors" />
       </div>
 
       <div>
-        <label for="campaign_objective" class="block text-sm font-medium text-gray-700">Mục tiêu (Objective)</label>
+        <label for="campaign_objective" class="block text-sm font-semibold text-gray-700"><%= t("campaigns.new.objective_label") %></label>
         <select id="campaign_objective" name="objective" required
-                class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2.5 border bg-white">
-          <option value="">-- Chọn mục tiêu chiến dịch --</option>
-          <option value="OUTCOME_TRAFFIC">Lưu lượng truy cập (OUTCOME_TRAFFIC)</option>
-          <option value="OUTCOME_LEADS">Tìm kiếm khách hàng tiềm năng (OUTCOME_LEADS)</option>
-          <option value="OUTCOME_AWARENESS">Nhận thức về thương hiệu (OUTCOME_AWARENESS)</option>
-          <option value="OUTCOME_SALES">Tương tác / Bán hàng (OUTCOME_SALES)</option>
+                data-campaign-form-target="objectiveSelect"
+                class="mt-1.5 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 sm:text-sm p-2.5 border bg-white transition-colors">
+          <option value=""><%= t("campaigns.new.select_objective") %></option>
+          <option value="OUTCOME_TRAFFIC"><%= t("campaigns.objectives.traffic") %></option>
+          <option value="OUTCOME_LEADS"><%= t("campaigns.objectives.leads") %></option>
+          <option value="OUTCOME_AWARENESS"><%= t("campaigns.objectives.awareness") %></option>
+          <option value="OUTCOME_SALES"><%= t("campaigns.objectives.sales") %></option>
         </select>
       </div>
 
       <div>
-        <label for="campaign_budget" class="block text-sm font-medium text-gray-700">Ngân sách ($ USD)</label>
-        <input type="number" id="campaign_budget" name="budget" step="0.01" min="1" required
-               placeholder="1000.00"
-               class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2.5 border" />
+        <label for="campaign_budget" class="block text-sm font-semibold text-gray-700"><%= t("campaigns.new.budget_label") %></label>
+        <input type="number" id="campaign_budget" name="budget" step="1000" min="1000" required
+               data-campaign-form-target="budgetInput"
+               placeholder="1000000"
+               class="mt-1.5 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 sm:text-sm p-2.5 border transition-colors" />
       </div>
 
       <div class="flex items-center justify-end space-x-3 pt-6 border-t border-gray-100">
-        <%= link_to "Hủy", dashboard_path,
-              class: "px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors" %>
+        <%= link_to t("campaigns.new.cancel_btn"), dashboard_path, class: "px-4 py-2.5 text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors" %>
         <button type="submit" id="submit-btn"
-                class="px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors cursor-pointer">
-          Tạo chiến dịch
+                data-campaign-form-target="submitBtn"
+                class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors cursor-pointer">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          <%= t("campaigns.new.submit_btn") %>
         </button>
       </div>
     </form>
   </div>
 </div>
-
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('create-campaign-form');
-    const errorAlert = document.getElementById('error-alert');
-    const errorList = document.getElementById('error-list');
-    const submitBtn = document.getElementById('submit-btn');
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      errorAlert.classList.add('hidden');
-      errorList.innerHTML = '';
-      submitBtn.disabled = true;
-
-      const payload = {
-        name: document.getElementById('campaign_name').value.trim(),
-        objective: document.getElementById('campaign_objective').value,
-        budget: parseFloat(document.getElementById('campaign_budget').value)
-      };
-
-      try {
-        const response = await fetch('/api/v1/campaigns', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify(payload)
-        });
-
-        const data = await response.json();
-
-        if (response.ok && data.success) {
-          window.location.href = '<%= dashboard_path %>';
-        } else {
-          submitBtn.disabled = false;
-          errorAlert.classList.remove('hidden');
-          const errors = data.errors || { general: ['Không thể tạo chiến dịch'] };
-          if (typeof errors === 'object' && !Array.isArray(errors)) {
-            Object.entries(errors).forEach(([field, msgs]) => {
-              const li = document.createElement('li');
-              li.textContent = `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`;
-              errorList.appendChild(li);
-            });
-          } else {
-            const li = document.createElement('li');
-            li.textContent = String(errors);
-            errorList.appendChild(li);
-          }
-        }
-      } catch (err) {
-        submitBtn.disabled = false;
-        errorAlert.classList.remove('hidden');
-        const li = document.createElement('li');
-        li.textContent = 'Lỗi kết nối máy chủ: ' + err.message;
-        errorList.appendChild(li);
-      }
-    });
-  });
-</script>

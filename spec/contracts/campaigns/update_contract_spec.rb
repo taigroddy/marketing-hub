@@ -13,7 +13,7 @@ RSpec.describe Campaigns::UpdateContract do
   it 'fails when id is missing' do
     result = contract.call(budget: 500.0)
     expect(result).to be_failure
-    expect(result.errors[:id]).to include('is missing')
+    expect(result.errors[:id]).to include(I18n.t('dry_validation.errors.key?'))
   end
 
   it 'fails when budget is missing or blank' do

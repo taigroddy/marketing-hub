@@ -19,7 +19,7 @@ RSpec.describe Auth::LoginContract do
   it 'fails when email format is invalid' do
     result = contract.call(email: 'not-an-email', password: 'Password123!')
     expect(result).to be_failure
-    expect(result.errors[:email]).to include('is invalid')
+    expect(result.errors[:email]).to include(I18n.t('dry_validation.errors.rules.email.invalid'))
   end
 
   it 'fails when password is empty' do

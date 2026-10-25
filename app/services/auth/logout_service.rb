@@ -18,9 +18,12 @@ module Auth
     end
 
     def find_and_verify_token(input)
-      raw_token = input[:refresh_token]
-      digest = UserToken.digest(raw_token)
-      user_token = UserToken.find_by(token_digest: digest)
+      user_token = if input[:refresh_token].present?
+                     digest = UserToken.digest(input[:refresh_token])
+                     UserToken.find_by(token_digest: digest)
+      elsif input[:user_token_id].present?
+                     UserToken.find_by(id: input[:user_token_id])
+      end
 
       return Failure(:token_not_found) if user_token.nil?
       return Failure(:token_revoked) if user_token.revoked?

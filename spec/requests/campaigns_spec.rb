@@ -97,9 +97,10 @@ RSpec.describe 'Campaigns Web UI', type: :request do
         get "/campaigns/#{campaign_a.id}"
 
         expect(response).to have_http_status(:ok)
+        expect(response.body).to include('id="campaign_header_section"')
         expect(response.body).to include('User A Web Campaign')
         expect(response.body).to include('OUTCOME_TRAFFIC')
-        expect(response.body).to include('1500.00')
+        expect(response.body).to include('1.500 ₫')
         expect(response.body).to include('Chỉnh sửa')
         expect(response.body).to include("/campaigns/#{campaign_a.id}/edit")
         expect(response.body).to include('turbo-cable-stream-source')
@@ -192,6 +193,7 @@ RSpec.describe 'Campaigns Web UI', type: :request do
         expect(response.body).to include('disabled')
         expect(response.body).to include(campaign_a.name)
         expect(response.body).to include('budget')
+        expect(response.body).to include("/campaigns/#{campaign_a.id}")
       end
     end
 

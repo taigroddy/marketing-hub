@@ -59,7 +59,7 @@ RSpec.describe Auth::RegisterService do
         )
 
         expect(result).to be_failure
-        expect(result.failure[:email]).to include('must be filled')
+        expect(result.failure[:email]).to include(I18n.t('dry_validation.errors.filled?'))
       end
 
       it 'returns failure with contract errors when email is invalid' do
@@ -70,7 +70,7 @@ RSpec.describe Auth::RegisterService do
         )
 
         expect(result).to be_failure
-        expect(result.failure[:email]).to include('is invalid')
+        expect(result.failure[:email]).to include(I18n.t('dry_validation.errors.rules.email.invalid'))
       end
 
       it 'returns failure when password confirmation does not match' do
@@ -81,7 +81,7 @@ RSpec.describe Auth::RegisterService do
         )
 
         expect(result).to be_failure
-        expect(result.failure[:password_confirmation]).to include('must match password')
+        expect(result.failure[:password_confirmation]).to include(I18n.t('dry_validation.errors.rules.password_confirmation.must_match_password'))
       end
     end
 
@@ -106,7 +106,7 @@ RSpec.describe Auth::RegisterService do
            .and not_have_enqueued_mail(UserMailer, :confirmation_email)
 
         expect(result).to be_failure
-        expect(result.failure[:email]).to include('has already been taken')
+        expect(result.failure[:email]).to include(I18n.t('services.auth.email_taken'))
       end
     end
 

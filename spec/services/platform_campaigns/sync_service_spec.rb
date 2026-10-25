@@ -50,7 +50,7 @@ RSpec.describe PlatformCampaigns::SyncService, type: :service do
       it 'returns failure' do
         result = described_class.call(platform_campaign_id: 999_999)
         expect(result).to be_failure
-        expect(result.failure[:platform_campaign]).to include('not found')
+        expect(result.failure[:platform_campaign]).to include(I18n.t('errors.not_found'))
       end
     end
   end
@@ -94,7 +94,7 @@ RSpec.describe PlatformCampaigns::SyncService, type: :service do
           expect(result.failure[:error]).to include('Google platform integration coming soon')
         end.to change {
           ActionCable.server.pubsub.broadcasts("campaign_#{campaign.id}").size
-        }.by(2)
+        }.by(3)
 
         google_platform_campaign.reload
         expect(google_platform_campaign.sync_status).to eq('failed')
@@ -124,11 +124,11 @@ RSpec.describe PlatformCampaigns::SyncService, type: :service do
       it 'persists failed status with unsupported platform message and broadcasts' do
         result = described_class.call(platform_campaign_id: tiktok_platform_campaign.id)
         expect(result).to be_failure
-        expect(result.failure[:error]).to include('Unsupported platform: tiktok')
+        expect(result.failure[:error]).to include(I18n.t('platform_accounts.messages.not_supported'))
 
         tiktok_platform_campaign.reload
         expect(tiktok_platform_campaign.sync_status).to eq('failed')
-        expect(tiktok_platform_campaign.last_error_message).to include('Unsupported platform: tiktok')
+        expect(tiktok_platform_campaign.last_error_message).to include(I18n.t('platform_accounts.messages.not_supported'))
       end
     end
 
@@ -158,7 +158,7 @@ RSpec.describe PlatformCampaigns::SyncService, type: :service do
           expect(result.failure[:error]).to include('Missing required account_id')
         end.to change {
           ActionCable.server.pubsub.broadcasts("campaign_#{campaign.id}").size
-        }.by(2)
+        }.by(3)
 
         invalid_platform_campaign.reload
         expect(invalid_platform_campaign.sync_status).to eq('failed')
@@ -180,9 +180,10 @@ RSpec.describe PlatformCampaigns::SyncService, type: :service do
         expect(platform_campaign.external_campaign_id).to eq('120252481465730228')
         expect(platform_campaign.synced_at).to be_present
         expect(platform_campaign.last_error_message).to be_nil
+        expect(campaign.reload.status).to eq('published')
 
         messages_after = ActionCable.server.pubsub.broadcasts("campaign_#{campaign.id}").size
-        expect(messages_after - messages_before).to eq(2)
+        expect(messages_after - messages_before).to eq(3)
       end
     end
 
@@ -228,7 +229,7 @@ RSpec.describe PlatformCampaigns::SyncService, type: :service do
         expect(platform_campaign.last_error_message).to include('Unsupported post request')
 
         messages_after = ActionCable.server.pubsub.broadcasts("campaign_#{campaign.id}").size
-        expect(messages_after - messages_before).to eq(2)
+        expect(messages_after - messages_before).to eq(3)
       end
     end
 

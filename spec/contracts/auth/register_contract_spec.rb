@@ -24,7 +24,7 @@ RSpec.describe Auth::RegisterContract do
   it 'fails when email format is invalid' do
     result = contract.call(email: 'invalid-email', password: 'Password123!')
     expect(result).to be_failure
-    expect(result.errors[:email]).to include('is invalid')
+    expect(result.errors[:email]).to include(I18n.t('dry_validation.errors.rules.email.invalid'))
   end
 
   it 'fails when password is too short' do
@@ -40,6 +40,6 @@ RSpec.describe Auth::RegisterContract do
       password_confirmation: 'DifferentPassword'
     )
     expect(result).to be_failure
-    expect(result.errors[:password_confirmation]).to include('must match password')
+    expect(result.errors[:password_confirmation]).to include(I18n.t('dry_validation.errors.rules.password_confirmation.must_match_password'))
   end
 end

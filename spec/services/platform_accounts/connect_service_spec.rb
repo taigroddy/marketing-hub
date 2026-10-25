@@ -24,14 +24,14 @@ RSpec.describe PlatformAccounts::ConnectService, type: :service do
       result = described_class.call(code: 'some_code')
 
       expect(result).to be_failure
-      expect(result.failure[:platform]).to include('is missing')
+      expect(result.failure[:platform]).to include(I18n.t('dry_validation.errors.key?'))
     end
 
     it 'returns failure when code is blank' do
       result = described_class.call(platform: 'facebook', code: '')
 
       expect(result).to be_failure
-      expect(result.failure[:code]).to include('must be filled')
+      expect(result.failure[:code]).to include(I18n.t('dry_validation.errors.filled?'))
     end
   end
 

@@ -5,12 +5,17 @@ api:
 entryPoints:
   web:
     address: ":80"
+  websecure:
+    address: ":443"
 
 providers:
   docker:
     endpoint: "unix:///var/run/docker.sock"
     exposedByDefault: false
     network: "marketing-net"
+  file:
+    filename: "/etc/traefik/dynamic_conf.yml"
+    watch: true
 
 log:
   level: INFO

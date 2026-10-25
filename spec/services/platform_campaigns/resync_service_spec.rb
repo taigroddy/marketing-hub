@@ -91,7 +91,7 @@ RSpec.describe PlatformCampaigns::ResyncService, type: :service do
             platform_campaign_id: platform_campaign.id
           )
           expect(result).to be_failure
-          expect(result.failure[:error]).to include('No drift detected')
+          expect(result.failure[:error]).to include(I18n.t('platform_campaigns.messages.no_drift_detected'))
         end.not_to have_enqueued_job(SyncCampaignJob)
       end
 
@@ -130,6 +130,7 @@ RSpec.describe PlatformCampaigns::ResyncService, type: :service do
       end
 
       it 'supports targeting a specific platform_campaign_id' do
+        messages_before = ActionCable.server.pubsub.broadcasts("campaign_#{campaign.id}").size
         expect do
           result = described_class.call(
             id: campaign.id,
@@ -139,9 +140,13 @@ RSpec.describe PlatformCampaigns::ResyncService, type: :service do
 
           expect(result).to be_success
         end.to have_enqueued_job(SyncCampaignJob).with(platform_campaign.id)
+
+        messages_after = ActionCable.server.pubsub.broadcasts("campaign_#{campaign.id}").size
+        expect(messages_after).to be > messages_before
+        expect(platform_campaign.reload.sync_status).to eq('pending')
       end
 
-      it 'supports synchronous mode (async: false) executing outside DB transactions', vcr: { cassette_name: 'facebook_sync_campaign', record: :new_episodes } do
+      it 'enqueues and executes background resync job', vcr: { cassette_name: 'facebook_sync_campaign', record: :new_episodes } do
         resync_campaign = Campaign.create!(
           user: user,
           name: 'Summer Promo 2026 Updated',
@@ -165,14 +170,16 @@ RSpec.describe PlatformCampaigns::ResyncService, type: :service do
           synced_at: 1.day.ago
         )
 
-        result = described_class.call(
-          id: resync_campaign.id,
-          platform: 'facebook',
-          platform_campaign_id: resync_pc.id,
-          async: false
-        )
+        perform_enqueued_jobs do
+          result = described_class.call(
+            id: resync_campaign.id,
+            platform: 'facebook',
+            platform_campaign_id: resync_pc.id
+          )
 
-        expect(result).to be_success
+          expect(result).to be_success
+        end
+
         resync_pc.reload
         expect(resync_pc.sync_status).to eq('synced')
         expect(resync_pc.synced_at).to be_within(10.seconds).of(Time.current)
@@ -201,7 +208,7 @@ RSpec.describe PlatformCampaigns::ResyncService, type: :service do
         platform_campaign_id: platform_campaign.id
       )
       expect(result).to be_failure
-      expect(result.failure[:campaign]).to include('not found')
+      expect(result.failure[:campaign]).to include(I18n.t('errors.not_found'))
     end
 
     it 'fails when no platform campaign exists for this campaign' do
@@ -213,7 +220,7 @@ RSpec.describe PlatformCampaigns::ResyncService, type: :service do
         platform_campaign_id: 999_999
       )
       expect(result).to be_failure
-      expect(result.failure[:platform_campaigns]).to include('not found')
+      expect(result.failure[:platform_campaigns]).to include(I18n.t('errors.not_found'))
     end
   end
 end
