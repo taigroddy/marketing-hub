@@ -50,14 +50,6 @@ RSpec.describe Campaigns::CreateService do
         expect(campaign.status).to eq('draft')
       end
 
-      it 'allows explicit user passed in input' do
-        Current.user = nil
-        result = described_class.call(valid_params.merge(user: user))
-
-        expect(result).to be_success
-        expect(result.value![:campaign].user_id).to eq(user.id)
-      end
-
       it 'enforces strict tenant isolation by ignoring user_id in params' do
         malicious_params = valid_params.merge(user_id: other_user.id)
         result = described_class.call(malicious_params)
@@ -66,14 +58,6 @@ RSpec.describe Campaigns::CreateService do
         campaign = result.value![:campaign]
         expect(campaign.user_id).to eq(user.id)
         expect(campaign.user_id).not_to eq(other_user.id)
-      end
-
-      it 'handles nested params under campaign key' do
-        nested_params = { campaign: valid_params }
-        result = described_class.call(nested_params)
-
-        expect(result).to be_success
-        expect(result.value![:campaign]).to be_persisted
       end
 
       it 'supports matcher block syntax' do

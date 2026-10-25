@@ -10,11 +10,7 @@ module Auth
     protected
 
     def validation(input)
-      raw = input.respond_to?(:to_unsafe_h) ? input.to_unsafe_h : input
-      normalized = raw.dup.symbolize_keys
-      normalized[:email] = normalized[:email].to_s.strip if normalized[:email].is_a?(String)
-
-      result = Auth::RegisterContract.new.call(normalized)
+      result = Auth::RegisterContract.new.call(input)
       if result.success?
         Success(result.to_h)
       else

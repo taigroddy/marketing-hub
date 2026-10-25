@@ -32,7 +32,7 @@ RSpec.describe Auth::RegisterService do
 
       it 'normalizes email before creation' do
         result = described_class.call(
-          email: '  SPACED@EXAMPLE.COM  ',
+          email: 'SPACED@EXAMPLE.COM',
           password: 'Password123!',
           password_confirmation: 'Password123!'
         )

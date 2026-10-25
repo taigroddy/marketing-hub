@@ -10,34 +10,17 @@ module PlatformCampaigns
     protected
 
     def validation(input)
-      normalized = input.dup.deep_symbolize_keys
-
-      campaign_id = normalized[:campaign_id] || normalized[:id]
-      platform = normalized[:platform].to_s.downcase
-
-      account_ids = normalized[:platform_account_ids] || normalized[:platform_account_id]
-      if account_ids.nil? && normalized[:platform_campaign].is_a?(Hash)
-        account_ids = normalized[:platform_campaign][:platform_account_ids]
-      end
-      account_ids = Array(account_ids).flatten.map(&:to_s).reject(&:blank?)
-
-      errors = {}
-      errors[:campaign_id] = [ "must be filled" ] if campaign_id.blank?
-      errors[:platform_account_ids] = [ "must be filled" ] if account_ids.empty?
-
-      if errors.any?
-        Failure(errors)
+      result = PlatformCampaigns::PublishContract.new.call(input)
+      if result.success?
+        Success(result.to_h)
       else
-        Success(normalized.merge(
-          campaign_id: campaign_id.to_i,
-          platform: platform,
-          platform_account_ids: account_ids.map(&:to_i)
-        ))
+        Failure(result.errors.to_h)
       end
     end
 
     def check_resource(input)
-      campaign = Campaign.find_by(id: input[:campaign_id])
+      campaign_id = input[:campaign_id] || input[:id]
+      campaign = Campaign.find_by(id: campaign_id)
       return Failure(campaign: [ "not found" ]) if campaign.nil?
 
       return Failure(error: "Google platform integration coming soon") if input[:platform] == "google"

@@ -8,14 +8,9 @@ module PlatformAccounts
     protected
 
     def validation(input)
-      normalized = input.dup.deep_symbolize_keys
-      provided_user = normalized[:user] if normalized[:user].is_a?(User)
-
-      result = PlatformAccounts::ConnectContract.new.call(normalized)
+      result = PlatformAccounts::ConnectContract.new.call(input)
       if result.success?
-        data = result.to_h
-        data[:user] = provided_user if provided_user
-        Success(data)
+        Success(result.to_h)
       else
         Failure(result.errors.to_h)
       end
@@ -24,8 +19,8 @@ module PlatformAccounts
     def save_platform_account(input)
       return Failure(error: "Google platform integration coming soon") if input[:platform].to_s.downcase == "google"
 
-      user = input[:user] || Current.user
-      client = input[:client] || Clients::OAuth::FacebookClient.new
+      user = Current.user
+      client = Clients::OAuth::FacebookClient.new
 
       exchange_result = client.exchange_code(code: input[:code], redirect_uri: input[:redirect_uri])
       return Failure(exchange_result.failure) if exchange_result.failure?

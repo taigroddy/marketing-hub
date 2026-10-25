@@ -9,13 +9,9 @@ module Auth
     private
 
     def validation(input)
-      email = input[:email] || input["email"]
-      cleaned = input.is_a?(Hash) ? input.symbolize_keys : {}
-      cleaned[:email] = email.to_s.strip if email.is_a?(String)
-
-      result = Auth::LoginContract.new.call(cleaned)
+      result = Auth::LoginContract.new.call(input)
       if result.success?
-        Success(result.to_h.merge(device_info: cleaned[:device_info]))
+        Success(result.to_h)
       else
         Failure(result.errors.to_h)
       end

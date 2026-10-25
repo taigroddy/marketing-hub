@@ -9,31 +9,16 @@ module Campaigns
     protected
 
     def validation(input)
-      normalized = input.dup.deep_symbolize_keys
-
-      provided_user = normalized[:user] if normalized[:user].is_a?(User)
-      provided_campaign = normalized[:campaign] if normalized[:campaign].is_a?(Campaign)
-
-      if normalized[:campaign].is_a?(Hash)
-        nested = normalized.delete(:campaign)
-        normalized = nested.merge(normalized)
-      end
-
-      normalized[:id] ||= provided_campaign.id if provided_campaign
-
-      result = Campaigns::UpdateContract.new.call(normalized)
+      result = Campaigns::UpdateContract.new.call(input)
       if result.success?
-        data = result.to_h
-        data[:user] = provided_user if provided_user
-        data[:campaign] = provided_campaign if provided_campaign
-        Success(data)
+        Success(result.to_h)
       else
         Failure(result.errors.to_h)
       end
     end
 
     def check_resource(input)
-      campaign = input[:campaign] || Campaign.find_by(id: input[:id])
+      campaign = Campaign.find_by(id: input[:id])
       return Failure(:not_found) if campaign.nil?
 
       Success(input.merge(campaign: campaign))

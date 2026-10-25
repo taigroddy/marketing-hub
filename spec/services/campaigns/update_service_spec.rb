@@ -47,14 +47,6 @@ RSpec.describe Campaigns::UpdateService do
         expect(updated.reload.budget).to eq(2500.50)
       end
 
-      it 'allows explicit user and campaign objects passed in input' do
-        Current.user = nil
-        result = described_class.call(campaign: campaign_a, user: user_a, budget: 3500.00)
-
-        expect(result).to be_success
-        expect(campaign_a.reload.budget).to eq(3500.00)
-      end
-
       it 'ignores any other fields besides budget (budget-only editing)' do
         result = described_class.call(
           id: campaign_a.id,

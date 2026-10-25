@@ -5,6 +5,7 @@ module Auth
     params do
       required(:email).filled(:string)
       required(:password).filled(:string)
+      optional(:device_info).maybe(:string)
     end
 
     rule(:email) do

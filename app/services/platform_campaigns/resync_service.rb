@@ -11,26 +11,17 @@ module PlatformCampaigns
     protected
 
     def validation(input)
-      normalized = input.dup.deep_symbolize_keys
-
-      campaign_id = normalized[:campaign_id] || normalized[:id]
-      platform = normalized[:platform].to_s.downcase
-
-      errors = {}
-      errors[:campaign_id] = [ "must be filled" ] if campaign_id.blank?
-
-      if errors.any?
-        Failure(errors)
+      result = PlatformCampaigns::ResyncContract.new.call(input)
+      if result.success?
+        Success(result.to_h)
       else
-        Success(normalized.merge(
-          campaign_id: campaign_id.to_i,
-          platform: platform
-        ))
+        Failure(result.errors.to_h)
       end
     end
 
     def check_resource(input)
-      campaign = Campaign.find_by(id: input[:campaign_id])
+      campaign_id = input[:campaign_id] || input[:id]
+      campaign = Campaign.find_by(id: campaign_id)
       return Failure(campaign: [ "not found" ]) if campaign.nil?
 
       records = campaign.platform_campaigns.joins(:platform_account)
