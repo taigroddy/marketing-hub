@@ -4,7 +4,7 @@ module Campaigns
   class CreateService < ApplicationService
     step :validation
     step :check_resource
-    step :process
+    step :create_campaign_record
 
     protected
 
@@ -34,7 +34,7 @@ module Campaigns
       Success(input.merge(user: user))
     end
 
-    def process(input)
+    def create_campaign_record(input)
       campaign = input[:user].campaigns.build(
         name: input[:name],
         objective: input[:objective],

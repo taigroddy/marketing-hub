@@ -149,6 +149,8 @@ RSpec.describe "Api::V1::Auth", type: :request do
           expect(json["data"]["user"]["email"]).to eq("login-user@example.com")
           decoded = Authenticable.decode_jwt(json["data"]["token"])
           expect(decoded[:user_id]).to eq(user.id)
+          expect(cookies[:jwt_token]).to be_present
+          expect(cookies[:refresh_token]).to be_present
         end
       end
 

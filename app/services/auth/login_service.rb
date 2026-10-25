@@ -4,7 +4,7 @@ module Auth
   class LoginService < ApplicationService
     step :validation
     step :check_resource
-    step :process
+    step :generate_session_tokens
 
     private
 
@@ -34,7 +34,7 @@ module Auth
       end
     end
 
-    def process(input)
+    def generate_session_tokens(input)
       user = input[:user]
       user_token, refresh_token = UserToken.create_for_user!(user, device_info: input[:device_info])
       token = Authenticable.encode_jwt({ user_id: user.id, user_token_id: user_token.id }, 1.hour.from_now)

@@ -34,6 +34,21 @@ module Api
         params_with_device = full_request_params.merge(device_info: request.user_agent)
         Auth::LoginService.call(params_with_device) do |m|
           m.success do |data|
+            cookies[:jwt_token] = {
+              value: data[:token],
+              httponly: true,
+              secure: Rails.env.production?,
+              same_site: :lax,
+              expires: 1.hour.from_now
+            }
+            cookies[:refresh_token] = {
+              value: data[:refresh_token],
+              httponly: true,
+              secure: Rails.env.production?,
+              same_site: :lax,
+              expires: 30.days.from_now
+            }
+
             render json: {
               success: true,
               data: {
@@ -81,7 +96,11 @@ module Api
       end
 
       def logout
-        Auth::LogoutService.call(full_request_params) do |m|
+        refresh_token = full_request_params[:refresh_token] || cookies[:refresh_token] || cookies["refresh_token"]
+        cookies.delete(:jwt_token, secure: Rails.env.production?, same_site: :lax)
+        cookies.delete(:refresh_token, secure: Rails.env.production?, same_site: :lax)
+
+        Auth::LogoutService.call(full_request_params.merge(refresh_token: refresh_token)) do |m|
           m.success do |_data|
             render json: {
               success: true,

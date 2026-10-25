@@ -4,7 +4,7 @@ module Auth
   class LogoutService < ApplicationService
     step :validation
     step :find_and_verify_token
-    step :process
+    step :revoke_user_token
 
     private
 
@@ -29,7 +29,7 @@ module Auth
       Success(input.merge(user_token: user_token))
     end
 
-    def process(input)
+    def revoke_user_token(input)
       user_token = input[:user_token]
       user_token.revoke!
 

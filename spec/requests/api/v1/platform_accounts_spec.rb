@@ -14,7 +14,7 @@ RSpec.describe "Api::V1::PlatformAccounts", type: :request do
   let(:jwt_token) { Authenticable.encode_jwt({ user_id: user.id }) }
   let(:headers) { { "Authorization" => "Bearer #{jwt_token}", "Accept" => "application/json" } }
 
-  path "/v1/{platform}/oauth/authorize" do
+  path "/api/v1/{platform}/oauth/authorize" do
     get "Initiate OAuth authorization with advertising platform" do
       tags "Platform Accounts"
       security [ bearerAuth: [] ]
@@ -101,7 +101,7 @@ RSpec.describe "Api::V1::PlatformAccounts", type: :request do
     end
   end
 
-  path "/v1/{platform}/oauth/callback" do
+  path "/api/v1/{platform}/oauth/callback" do
     get "OAuth callback to exchange authorization code for access token", vcr: { cassette_name: "facebook_oauth" } do
       tags "Platform Accounts"
       security [ bearerAuth: [] ]
@@ -230,19 +230,20 @@ RSpec.describe "Api::V1::PlatformAccounts", type: :request do
 
   describe "Platform accounts additional cases" do
     it "rejects unsupported platform route constraint" do
-      get "/v1/unsupported_platform/oauth/authorize", headers: headers
+      get "/api/v1/unsupported_platform/oauth/authorize", headers: headers
       expect(response).to have_http_status(:not_found)
     end
 
-    it "redirects to facebook OAuth dialog in html format" do
-      get "/v1/facebook/oauth/authorize",
-          headers: { "Authorization" => "Bearer #{jwt_token}", "Accept" => "text/html" }
-      expect(response).to have_http_status(:found)
-      expect(response.location).to include("https://www.facebook.com/v21.0/dialog/oauth")
+    it "returns JSON authorize_url for facebook OAuth dialog" do
+      get "/api/v1/facebook/oauth/authorize", headers: headers
+      expect(response).to have_http_status(:ok)
+      json = JSON.parse(response.body)
+      expect(json["success"]).to be true
+      expect(json["data"]["authorize_url"]).to include("https://www.facebook.com/v21.0/dialog/oauth")
     end
 
     it "returns 422 when Google platform callback is invoked" do
-      get "/v1/google/oauth/callback", params: { code: "google_code" }, headers: headers
+      get "/api/v1/google/oauth/callback", params: { code: "google_code" }, headers: headers
       expect(response).to have_http_status(:unprocessable_content)
       json = JSON.parse(response.body)
       expect(json["success"]).to be false
@@ -260,7 +261,7 @@ RSpec.describe "Api::V1::PlatformAccounts", type: :request do
     end
 
     it "redirects to dashboard when callback is requested as HTML", vcr: { cassette_name: "facebook_oauth" } do
-      get "/v1/facebook/oauth/callback",
+      get "/api/v1/facebook/oauth/callback",
           params: { code: "valid_auth_code" },
           headers: { "Authorization" => "Bearer #{jwt_token}", "Accept" => "text/html" }
       expect(response).to redirect_to(dashboard_path)
@@ -268,7 +269,7 @@ RSpec.describe "Api::V1::PlatformAccounts", type: :request do
     end
 
     it "redirects to dashboard with alert on failure when requested as HTML", vcr: { cassette_name: "facebook_oauth" } do
-      get "/v1/facebook/oauth/callback",
+      get "/api/v1/facebook/oauth/callback",
           params: { code: "invalid_code" },
           headers: { "Authorization" => "Bearer #{jwt_token}", "Accept" => "text/html" }
       expect(response).to redirect_to(dashboard_path)
@@ -276,7 +277,7 @@ RSpec.describe "Api::V1::PlatformAccounts", type: :request do
     end
 
     it "redirects to dashboard with alert on validation error when requested as HTML" do
-      get "/v1/facebook/oauth/callback",
+      get "/api/v1/facebook/oauth/callback",
           params: { code: "" },
           headers: { "Authorization" => "Bearer #{jwt_token}", "Accept" => "text/html" }
       expect(response).to redirect_to(dashboard_path)

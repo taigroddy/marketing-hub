@@ -4,7 +4,7 @@ module Campaigns
   class UpdateService < ApplicationService
     step :validation
     step :check_resource
-    step :process
+    step :update_campaign_budget
 
     protected
 
@@ -42,7 +42,7 @@ module Campaigns
       Success(input.merge(campaign: campaign, user: user))
     end
 
-    def process(input)
+    def update_campaign_budget(input)
       campaign = input[:campaign]
       if campaign.update(budget: input[:budget])
         Success(campaign: campaign)

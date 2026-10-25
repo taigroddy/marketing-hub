@@ -4,8 +4,8 @@ module PlatformCampaigns
   class PublishService < ApplicationService
     step :validation
     step :check_resource
-    step :upsert_records
-    step :enqueue_sync_jobs
+    step :persist_platform_campaigns
+    step :enqueue_sync_workers
 
     protected
 
@@ -62,7 +62,7 @@ module PlatformCampaigns
       Success(input.merge(user: user, campaign: campaign, accounts: accounts))
     end
 
-    def upsert_records(input)
+    def persist_platform_campaigns(input)
       campaign = input[:campaign]
       accounts = input[:accounts]
       now = Time.current
@@ -87,7 +87,7 @@ module PlatformCampaigns
       Success(input.merge(platform_campaigns: platform_campaigns))
     end
 
-    def enqueue_sync_jobs(input)
+    def enqueue_sync_workers(input)
       platform_campaigns = input[:platform_campaigns]
 
       platform_campaigns.each do |pc|

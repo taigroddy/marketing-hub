@@ -24,7 +24,8 @@ RSpec.describe 'Dashboard', type: :request do
         expect(response.body).to include('Tài khoản quảng cáo (Platform Accounts)')
         expect(response.body).to include('Chưa có tài khoản quảng cáo nào được liên kết')
         expect(response.body).to include('Liên kết mới')
-        expect(response.body).to include('/v1/facebook/oauth/authorize')
+        expect(response.body).to include("connectPlatform('facebook')")
+        expect(response.body).to include('/api/v1/${platform}/oauth/authorize')
         expect(response.body).to include('Sắp ra mắt')
       end
 

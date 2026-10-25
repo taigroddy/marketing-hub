@@ -4,7 +4,7 @@ module Auth
   class RefreshTokenService < ApplicationService
     step :validation
     step :find_and_verify_token
-    step :process
+    step :issue_new_tokens
 
     private
 
@@ -29,7 +29,7 @@ module Auth
       Success(input.merge(user_token: user_token, user: user_token.user))
     end
 
-    def process(input)
+    def issue_new_tokens(input)
       user_token = input[:user_token]
       user = input[:user]
 

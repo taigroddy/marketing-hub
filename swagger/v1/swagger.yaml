@@ -680,7 +680,7 @@ paths:
                   example: 3500.0
               required:
               - budget
-  "/v1/{platform}/oauth/authorize":
+  "/api/v1/{platform}/oauth/authorize":
     get:
       summary: Initiate OAuth authorization with advertising platform
       tags:
@@ -768,7 +768,7 @@ paths:
                     description: Error details or validation hash
                 required:
                 - success
-  "/v1/{platform}/oauth/callback":
+  "/api/v1/{platform}/oauth/callback":
     get:
       summary: OAuth callback to exchange authorization code for access token
       tags:
@@ -875,7 +875,7 @@ paths:
                     nullable: true
                 required:
                 - success
-  "/v1/{platform}/campaigns/{id}/publish":
+  "/api/v1/{platform}/campaigns/{id}/publish":
     parameters:
     - name: platform
       in: path
@@ -1002,7 +1002,7 @@ paths:
                   - 1
               required:
               - platform_account_ids
-  "/v1/{platform}/campaigns/{id}/resync":
+  "/api/v1/{platform}/campaigns/{id}/resync":
     parameters:
     - name: platform
       in: path

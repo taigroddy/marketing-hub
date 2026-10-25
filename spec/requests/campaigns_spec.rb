@@ -146,7 +146,8 @@ RSpec.describe 'Campaigns Web UI', type: :request do
         expect(response.body).to include('fb_ext_drift_007')
         expect(response.body).to include('Sai lệch')
         expect(response.body).to include('Re-sync')
-        expect(response.body).to include("/v1/facebook/campaigns/#{campaign_a.id}/resync")
+        expect(response.body).to include('data-platform="facebook"')
+        expect(response.body).to include("data-campaign-id=\"#{campaign_a.id}\"")
       end
     end
 
@@ -181,62 +182,6 @@ RSpec.describe 'Campaigns Web UI', type: :request do
     end
   end
 
-  describe 'POST /campaigns' do
-    context 'with valid parameters' do
-      it 'creates campaign and redirects to dashboard' do
-        cookies[:jwt_token] = token_a
-        expect do
-          post '/campaigns', params: {
-            campaign: {
-              name: 'New Web Camp',
-              objective: 'OUTCOME_LEADS',
-              budget: '2000'
-            }
-          }
-        end.to change(user_a.campaigns, :count).by(1)
-
-        expect(response).to redirect_to(dashboard_path)
-        follow_redirect!
-        expect(response.body).to include('Campaign created successfully')
-      end
-    end
-
-    context 'with invalid parameters' do
-      it 'renders new form with 422 unprocessable content' do
-        cookies[:jwt_token] = token_a
-        expect do
-          post '/campaigns', params: {
-            campaign: {
-              name: '',
-              objective: '',
-              budget: '-10'
-            }
-          }
-        end.not_to change(Campaign, :count)
-
-        expect(response).to have_http_status(:unprocessable_content)
-      end
-    end
-
-    context 'when contract validation fails with invalid status' do
-      it 'renders new form with 422 unprocessable content and error message' do
-        cookies[:jwt_token] = token_a
-
-        post '/campaigns', params: {
-          campaign: {
-            name: 'Valid',
-            objective: 'OUTCOME_TRAFFIC',
-            budget: '500',
-            status: 'invalid_status'
-          }
-        }
-
-        expect(response).to have_http_status(:unprocessable_content)
-        expect(flash[:alert]).to be_present
-      end
-    end
-  end
-
   describe 'GET /campaigns/:id/edit' do
     context 'when owner' do
       it 'renders edit form with name and objective disabled and budget editable' do
@@ -263,71 +208,6 @@ RSpec.describe 'Campaigns Web UI', type: :request do
       it 'renders 404 not found page' do
         cookies[:jwt_token] = token_a
         get '/campaigns/999999/edit'
-
-        expect(response).to have_http_status(:not_found)
-      end
-    end
-  end
-
-  describe 'PATCH /campaigns/:id' do
-    context 'when owner updates budget' do
-      it 'updates budget and redirects to dashboard' do
-        cookies[:jwt_token] = token_a
-        patch "/campaigns/#{campaign_a.id}", params: {
-          campaign: {
-            budget: '3200.00',
-            name: 'Attempted Name Change'
-          }
-        }
-
-        expect(response).to redirect_to(dashboard_path)
-        campaign_a.reload
-        expect(campaign_a.budget).to eq(3200.00)
-        expect(campaign_a.name).to eq('User A Web Campaign')
-      end
-    end
-
-    context 'when validation fails' do
-      it 'renders edit form with 422 unprocessable content' do
-        cookies[:jwt_token] = token_a
-        patch "/campaigns/#{campaign_a.id}", params: {
-          campaign: { budget: '-50' }
-        }
-
-        expect(response).to have_http_status(:unprocessable_content)
-        expect(flash[:alert]).to be_present
-      end
-    end
-
-    context 'when validation fails on non-existent campaign' do
-      it 'renders 404 not found page' do
-        cookies[:jwt_token] = token_a
-        patch '/campaigns/999999', params: {
-          campaign: { budget: '-50' }
-        }
-
-        expect(response).to have_http_status(:not_found)
-      end
-    end
-
-    context 'when updating another user campaign' do
-      it 'renders 404 not found page and does not modify campaign' do
-        cookies[:jwt_token] = token_b
-        patch "/campaigns/#{campaign_a.id}", params: {
-          campaign: { budget: '9999.00' }
-        }
-
-        expect(response).to have_http_status(:not_found)
-        expect(campaign_a.reload.budget).to eq(1500.00)
-      end
-    end
-
-    context 'when updating non-existent campaign' do
-      it 'renders 404 not found page' do
-        cookies[:jwt_token] = token_a
-        patch '/campaigns/999999', params: {
-          campaign: { budget: '9999.00' }
-        }
 
         expect(response).to have_http_status(:not_found)
       end

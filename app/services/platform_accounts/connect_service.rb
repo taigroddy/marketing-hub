@@ -4,7 +4,7 @@ module PlatformAccounts
   class ConnectService < ApplicationService
     step :validation
     step :check_resource
-    step :process
+    step :save_platform_account
 
     protected
 
@@ -29,7 +29,7 @@ module PlatformAccounts
       Success(input.merge(user: user))
     end
 
-    def process(input)
+    def save_platform_account(input)
       return Failure(error: "Google platform integration coming soon") if input[:platform].to_s.downcase == "google"
 
       user = input[:user]

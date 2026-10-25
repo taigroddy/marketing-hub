@@ -9,6 +9,10 @@
     <p class="text-sm text-gray-500 mt-1">Danh sách liên kết chiến dịch trên các nền tảng và tình trạng đồng bộ.</p>
   </div>
 
+  <div id="resync-error-alert" class="hidden mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+    <p id="resync-error-msg" class="text-sm text-red-700"></p>
+  </div>
+
   <% if platform_campaigns.blank? %>
     <div class="mt-6 text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
       <p class="text-gray-500 text-sm">Chiến dịch này chưa được liên kết hoặc đồng bộ tới nền tảng nào.</p>
@@ -62,11 +66,13 @@
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <% if has_drift %>
-                  <%= button_to "Re-sync",
-                        "/v1/#{pc.platform_account.platform_name.downcase}/campaigns/#{campaign.id}/resync",
-                        method: :post,
-                        params: { platform_campaign_id: pc.id },
-                        class: "inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-amber-600 hover:bg-amber-700 transition" %>
+                  <button type="button"
+                          class="resync-btn inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-amber-600 hover:bg-amber-700 transition cursor-pointer"
+                          data-platform="<%= pc.platform_account.platform_name.downcase %>"
+                          data-campaign-id="<%= campaign.id %>"
+                          data-platform-campaign-id="<%= pc.id %>">
+                    Re-sync
+                  </button>
                 <% end %>
               </td>
             </tr>
@@ -76,3 +82,51 @@
     </div>
   <% end %>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const errorAlert = document.getElementById('resync-error-alert');
+    const errorMsg = document.getElementById('resync-error-msg');
+
+    document.querySelectorAll('.resync-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        btn.disabled = true;
+        if (errorAlert) errorAlert.classList.add('hidden');
+
+        const platform = btn.dataset.platform;
+        const campaignId = btn.dataset.campaignId;
+        const pcId = parseInt(btn.dataset.platformCampaignId, 10);
+
+        try {
+          const response = await fetch(`/api/v1/${platform}/campaigns/${campaignId}/resync`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify({ platform_campaign_id: pcId })
+          });
+
+          const data = await response.json();
+          if (response.ok && data.success) {
+            window.location.reload();
+          } else {
+            btn.disabled = false;
+            if (errorAlert && errorMsg) {
+              errorAlert.classList.remove('hidden');
+              const errs = data.errors || 'Đồng bộ lại thất bại';
+              errorMsg.textContent = typeof errs === 'object' ? JSON.stringify(errs) : String(errs);
+            }
+          }
+        } catch (err) {
+          btn.disabled = false;
+          if (errorAlert && errorMsg) {
+            errorAlert.classList.remove('hidden');
+            errorMsg.textContent = 'Lỗi kết nối máy chủ: ' + err.message;
+          }
+        }
+      });
+    });
+  });
+</script>

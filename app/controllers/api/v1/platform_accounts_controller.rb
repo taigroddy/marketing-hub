@@ -28,15 +28,11 @@ module Api
             scope: params[:scope]
           )
 
-          if html_browser_request?
-            redirect_to auth_url, allow_other_host: true
-          else
-            render json: {
-              success: true,
-              data: { authorize_url: auth_url },
-              errors: nil
-            }, status: :ok
-          end
+          render json: {
+            success: true,
+            data: { authorize_url: auth_url },
+            errors: nil
+          }, status: :ok
         when "google"
           render json: { success: false, data: nil, errors: "Google platform integration coming soon" }, status: :not_implemented
         else
@@ -47,9 +43,7 @@ module Api
       def callback
         PlatformAccounts::ConnectService.call(full_request_params) do |m|
           m.success do |result|
-            if html_browser_request?
-              redirect_to dashboard_path, notice: "Tài khoản #{result[:platform_account].platform_name} đã được kết nối thành công."
-            else
+            if request.format.json?
               render json: {
                 success: true,
                 data: {
@@ -58,27 +52,33 @@ module Api
                 },
                 errors: nil
               }, status: :ok
+            else
+              redirect_to dashboard_path, notice: "Tài khoản #{result[:platform_account].platform_name} đã được kết nối thành công."
             end
           end
 
           m.failure(:validation) do |errors|
-            if html_browser_request?
-              redirect_to dashboard_path, alert: "Kết nối thất bại: #{errors.values.flatten.join(', ')}"
-            else
+            if request.format.json?
               render json: { success: false, data: nil, errors: errors }, status: :unprocessable_content
+            else
+              redirect_to dashboard_path, alert: "Kết nối thất bại: #{errors.values.flatten.join(', ')}"
             end
           end
 
           m.failure(:check_resource) do |_error|
-            render json: { success: false, data: nil, errors: "Unauthorized" }, status: :unauthorized
+            if request.format.json?
+              render json: { success: false, data: nil, errors: "Unauthorized" }, status: :unauthorized
+            else
+              redirect_to dashboard_path, alert: "Kết nối thất bại: Unauthorized"
+            end
           end
 
           m.failure do |error|
             error_msg = extract_error_message(error)
-            if html_browser_request?
-              redirect_to dashboard_path, alert: "Kết nối thất bại: #{error_msg}"
-            else
+            if request.format.json?
               render json: { success: false, data: nil, errors: error_msg }, status: :unprocessable_content
+            else
+              redirect_to dashboard_path, alert: "Kết nối thất bại: #{error_msg}"
             end
           end
         end
@@ -96,10 +96,6 @@ module Api
         else
           error.to_s
         end
-      end
-
-      def html_browser_request?
-        request.format.html? && params[:format] != "json"
       end
     end
   end

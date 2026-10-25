@@ -36,7 +36,7 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
     )
   end
 
-  path "/v1/{platform}/campaigns/{id}/publish" do
+  path "/api/v1/{platform}/campaigns/{id}/publish" do
     parameter name: :platform, in: :path, type: :string, schema: { type: :string, enum: %w[facebook google] }, description: "Advertising platform (facebook or google)"
     parameter name: :id, in: :path, type: :integer, description: "Campaign ID"
 
@@ -187,7 +187,7 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
     end
   end
 
-  path "/v1/{platform}/campaigns/{id}/resync" do
+  path "/api/v1/{platform}/campaigns/{id}/resync" do
     parameter name: :platform, in: :path, type: :string, schema: { type: :string, enum: %w[facebook google] }, description: "Advertising platform (facebook or google)"
     parameter name: :id, in: :path, type: :integer, description: "Campaign ID"
 
@@ -323,41 +323,14 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
 
   describe "Additional platform campaign test cases" do
     it "rejects unsupported platform route constraint" do
-      post "/v1/tiktok/campaigns/#{campaign.id}/publish",
+      post "/api/v1/tiktok/campaigns/#{campaign.id}/publish",
            params: { platform_account_ids: [ account_fb.id ] },
            headers: headers
       expect(response).to have_http_status(:not_found)
     end
 
-    it "handles HTML browser request on publish" do
-      cookies[:jwt_token] = auth_token
-      post "/v1/facebook/campaigns/#{campaign.id}/publish",
-           params: { platform_account_ids: [ account_fb.id ] }
-      expect(response).to redirect_to(campaign_path(campaign))
-      follow_redirect!
-      expect(flash[:notice]).to be_present
-    end
-
-    it "handles HTML browser request on resync" do
-      p_camp = PlatformCampaign.create!(
-        campaign: campaign,
-        platform_account: account_fb,
-        external_campaign_id: "fb_ext_req_002",
-        sync_status: "synced",
-        synced_at: 1.day.ago
-      )
-      campaign.update_columns(updated_at: 10.minutes.ago)
-      cookies[:jwt_token] = auth_token
-
-      post "/v1/facebook/campaigns/#{campaign.id}/resync",
-           params: { platform_campaign_id: p_camp.id }
-      expect(response).to redirect_to(campaign_path(campaign))
-      follow_redirect!
-      expect(flash[:notice]).to be_present
-    end
-
     it "returns 404 when publishing non-existent campaign" do
-      post "/v1/facebook/campaigns/999999/publish",
+      post "/api/v1/facebook/campaigns/999999/publish",
            params: { platform_account_ids: [ account_fb.id ] },
            headers: headers,
            as: :json
@@ -369,7 +342,7 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
     end
 
     it "returns 404 when publishing with non-existent or foreign platform account" do
-      post "/v1/facebook/campaigns/#{campaign.id}/publish",
+      post "/api/v1/facebook/campaigns/#{campaign.id}/publish",
            params: { platform_account_ids: [ 999_999 ] },
            headers: headers,
            as: :json
@@ -387,7 +360,7 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
         sync_status: "pending"
       )
 
-      post "/v1/facebook/campaigns/#{campaign.id}/publish",
+      post "/api/v1/facebook/campaigns/#{campaign.id}/publish",
            params: { platform_account_ids: [ account_fb.id ] },
            headers: headers,
            as: :json
@@ -399,7 +372,7 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
     end
 
     it "returns 422 when publishing to unsupported google platform" do
-      post "/v1/google/campaigns/#{campaign.id}/publish",
+      post "/api/v1/google/campaigns/#{campaign.id}/publish",
            params: { platform_account_ids: [ account_fb.id ] },
            headers: headers,
            as: :json
@@ -411,7 +384,7 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
     end
 
     it "returns 404 when resyncing non-existent campaign" do
-      post "/v1/facebook/campaigns/999999/resync",
+      post "/api/v1/facebook/campaigns/999999/resync",
            params: { platform_campaign_id: 1 },
            headers: headers,
            as: :json
@@ -423,7 +396,7 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
     end
 
     it "returns 404 when resyncing non-existent platform campaign" do
-      post "/v1/facebook/campaigns/#{campaign.id}/resync",
+      post "/api/v1/facebook/campaigns/#{campaign.id}/resync",
            params: { platform_campaign_id: 999_999 },
            headers: headers,
            as: :json
@@ -435,7 +408,7 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
     end
 
     it "returns 422 on resync validation error" do
-      post "/v1/facebook/campaigns/%20/resync", headers: headers, as: :json
+      post "/api/v1/facebook/campaigns/%20/resync", headers: headers, as: :json
       expect(response).to have_http_status(:unprocessable_content)
       json = JSON.parse(response.body)
       expect(json["success"]).to be false
@@ -443,66 +416,7 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
       expect(json["errors"]).to be_present
     end
 
-    it "redirects with alert on HTML browser resync validation error" do
-      cookies[:jwt_token] = auth_token
-      post "/v1/facebook/campaigns/%20/resync"
-      expect(response).to redirect_to(dashboard_path)
-      follow_redirect!
-      expect(flash[:alert]).to include("Đồng bộ lại thất bại")
-    end
-
-    it "renders 404 on HTML browser publish for missing campaign" do
-      cookies[:jwt_token] = auth_token
-      post "/v1/facebook/campaigns/999999/publish",
-           params: { platform_account_ids: [ account_fb.id ] }
-      expect(response).to have_http_status(:not_found)
-    end
-
-    it "redirects with alert on HTML browser publish validation error" do
-      cookies[:jwt_token] = auth_token
-      post "/v1/facebook/campaigns/#{campaign.id}/publish",
-           params: { platform_account_ids: [] }
-      expect(response).to redirect_to(campaign_path(campaign))
-      follow_redirect!
-      expect(flash[:alert]).to include("Đồng bộ thất bại")
-    end
-
-    it "redirects with alert on HTML browser publish when already published" do
-      PlatformCampaign.create!(campaign: campaign, platform_account: account_fb, sync_status: "pending")
-      cookies[:jwt_token] = auth_token
-      post "/v1/facebook/campaigns/#{campaign.id}/publish",
-           params: { platform_account_ids: [ account_fb.id ] }
-      expect(response).to redirect_to(campaign_path(campaign))
-      follow_redirect!
-      expect(flash[:alert]).to include("Đồng bộ thất bại")
-    end
-
-    it "redirects with alert on HTML browser publish for google platform" do
-      cookies[:jwt_token] = auth_token
-      post "/v1/google/campaigns/#{campaign.id}/publish",
-           params: { platform_account_ids: [ account_fb.id ] }
-      expect(response).to redirect_to(campaign_path(campaign))
-      follow_redirect!
-      expect(flash[:alert]).to include("Đồng bộ thất bại")
-    end
-
-    it "renders 404 on HTML browser resync for missing campaign" do
-      cookies[:jwt_token] = auth_token
-      post "/v1/facebook/campaigns/999999/resync",
-           params: { platform_campaign_id: 1 }
-      expect(response).to have_http_status(:not_found)
-    end
-
-    it "redirects with alert on HTML browser resync when platform campaign not found" do
-      cookies[:jwt_token] = auth_token
-      post "/v1/facebook/campaigns/#{campaign.id}/resync",
-           params: { platform_campaign_id: 999_999 }
-      expect(response).to redirect_to(campaign_path(campaign))
-      follow_redirect!
-      expect(flash[:alert]).to include("Đồng bộ lại thất bại")
-    end
-
-    it "redirects with alert on HTML browser resync when no drift detected" do
+    it "returns 422 when resyncing campaign without drift" do
       p_camp = PlatformCampaign.create!(
         campaign: campaign,
         platform_account: account_fb,
@@ -511,12 +425,15 @@ RSpec.describe "Api::V1::PlatformCampaigns", type: :request do
         synced_at: 1.day.ago
       )
       campaign.update_columns(updated_at: 2.days.ago)
-      cookies[:jwt_token] = auth_token
-      post "/v1/facebook/campaigns/#{campaign.id}/resync",
-           params: { platform_campaign_id: p_camp.id }
-      expect(response).to redirect_to(campaign_path(campaign))
-      follow_redirect!
-      expect(flash[:alert]).to include("Đồng bộ lại thất bại")
+
+      post "/api/v1/facebook/campaigns/#{campaign.id}/resync",
+           params: { platform_campaign_id: p_camp.id },
+           headers: headers,
+           as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+      json = JSON.parse(response.body)
+      expect(json["success"]).to be false
+      expect(json["errors"]).to include("No drift detected")
     end
   end
 end

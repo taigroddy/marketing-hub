@@ -5,43 +5,97 @@
       <p class="text-sm text-gray-500 mt-1">Chỉ cho phép cập nhật ngân sách (Budget). Các thông tin khác không thể chỉnh sửa.</p>
     </div>
 
-    <% if @errors.present? %>
-      <div class="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-        <h4 class="text-sm font-semibold text-red-800">Vui lòng kiểm tra lại thông tin:</h4>
-        <ul class="mt-2 text-sm text-red-700 list-disc list-inside">
-          <% @errors.each do |field, messages| %>
-            <li><%= field.to_s.humanize %>: <%= Array(messages).join(", ") %></li>
-          <% end %>
-        </ul>
-      </div>
-    <% end %>
+    <div id="error-alert" class="hidden mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+      <h4 class="text-sm font-semibold text-red-800">Vui lòng kiểm tra lại thông tin:</h4>
+      <ul id="error-list" class="mt-2 text-sm text-red-700 list-disc list-inside"></ul>
+    </div>
 
-    <%= form_with url: campaign_path(@campaign), method: :patch, scope: :campaign, class: "mt-6 space-y-6" do |f| %>
+    <form id="edit-campaign-form" class="mt-6 space-y-6">
       <div>
-        <%= f.label :name, "Tên chiến dịch (Không thể sửa)", class: "block text-sm font-medium text-gray-500" %>
-        <%= f.text_field :name, value: @campaign.name, disabled: true,
-              class: "mt-1 block w-full rounded-lg border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed shadow-sm sm:text-sm p-2.5 border" %>
+        <label class="block text-sm font-medium text-gray-500">Tên chiến dịch (Không thể sửa)</label>
+        <input type="text" value="<%= @campaign.name %>" disabled
+               class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed shadow-sm sm:text-sm p-2.5 border" />
       </div>
 
       <div>
-        <%= f.label :objective, "Mục tiêu (Không thể sửa)", class: "block text-sm font-medium text-gray-500" %>
-        <%= f.text_field :objective, value: @campaign.objective, disabled: true,
-              class: "mt-1 block w-full rounded-lg border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed shadow-sm sm:text-sm p-2.5 border" %>
+        <label class="block text-sm font-medium text-gray-500">Mục tiêu (Không thể sửa)</label>
+        <input type="text" value="<%= @campaign.objective %>" disabled
+               class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed shadow-sm sm:text-sm p-2.5 border" />
       </div>
 
       <div>
-        <%= f.label :budget, "Ngân sách ($ USD)", class: "block text-sm font-medium text-gray-700" %>
-        <%= f.number_field :budget, value: @campaign.budget, step: "0.01", min: "1", required: true,
-              class: "mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2.5 border" %>
+        <label for="campaign_budget" class="block text-sm font-medium text-gray-700">Ngân sách ($ USD)</label>
+        <input type="number" id="campaign_budget" name="budget" value="<%= @campaign.budget %>" step="0.01" min="1" required
+               class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2.5 border" />
         <p class="mt-1 text-xs text-indigo-600">Lưu ý: Thay đổi ngân sách sẽ làm sai lệch dữ liệu với các platform đã sync và kích hoạt trạng thái Re-sync.</p>
       </div>
 
       <div class="flex items-center justify-end space-x-3 pt-6 border-t border-gray-100">
         <%= link_to "Hủy", dashboard_path,
               class: "px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors" %>
-        <%= f.submit "Cập nhật ngân sách",
-              class: "px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors cursor-pointer" %>
+        <button type="submit" id="submit-btn"
+                class="px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors cursor-pointer">
+          Cập nhật ngân sách
+        </button>
       </div>
-    <% end %>
+    </form>
   </div>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('edit-campaign-form');
+    const errorAlert = document.getElementById('error-alert');
+    const errorList = document.getElementById('error-list');
+    const submitBtn = document.getElementById('submit-btn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorAlert.classList.add('hidden');
+      errorList.innerHTML = '';
+      submitBtn.disabled = true;
+
+      const payload = {
+        budget: parseFloat(document.getElementById('campaign_budget').value)
+      };
+
+      try {
+        const response = await fetch('/api/v1/campaigns/<%= @campaign.id %>', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          window.location.href = '<%= dashboard_path %>';
+        } else {
+          submitBtn.disabled = false;
+          errorAlert.classList.remove('hidden');
+          const errors = data.errors || { general: ['Không thể cập nhật ngân sách'] };
+          if (typeof errors === 'object' && !Array.isArray(errors)) {
+            Object.entries(errors).forEach(([field, msgs]) => {
+              const li = document.createElement('li');
+              li.textContent = `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`;
+              errorList.appendChild(li);
+            });
+          } else {
+            const li = document.createElement('li');
+            li.textContent = String(errors);
+            errorList.appendChild(li);
+          }
+        }
+      } catch (err) {
+        submitBtn.disabled = false;
+        errorAlert.classList.remove('hidden');
+        const li = document.createElement('li');
+        li.textContent = 'Lỗi kết nối máy chủ: ' + err.message;
+        errorList.appendChild(li);
+      }
+    });
+  });
+</script>

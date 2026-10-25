@@ -3,7 +3,7 @@
 module Auth
   class ConfirmEmailService < ApplicationService
     step :check_resource
-    step :process
+    step :confirm_user_account
 
     protected
 
@@ -23,7 +23,7 @@ module Auth
       end
     end
 
-    def process(input)
+    def confirm_user_account(input)
       user = input[:user]
       user.confirm!
       token = Authenticable.encode_jwt({ user_id: user.id })

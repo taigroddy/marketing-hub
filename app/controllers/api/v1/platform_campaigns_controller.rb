@@ -10,26 +10,18 @@ module Api
       def publish
         PlatformCampaigns::PublishService.call(full_request_params) do |m|
           m.success do |result|
-            if html_browser_request?
-              redirect_to campaign_path(result[:campaign]), notice: "Chiến dịch đang được đồng bộ lên nền tảng."
-            else
-              render json: {
-                success: true,
-                data: {
-                  platform_campaigns: PlatformCampaignBlueprint.render_as_hash(result[:platform_campaigns]),
-                  message: "Campaign publish initiated successfully"
-                },
-                errors: nil
-              }, status: :ok
-            end
+            render json: {
+              success: true,
+              data: {
+                platform_campaigns: PlatformCampaignBlueprint.render_as_hash(result[:platform_campaigns]),
+                message: "Campaign publish initiated successfully"
+              },
+              errors: nil
+            }, status: :ok
           end
 
           m.failure(:validation) do |errors|
-            if html_browser_request?
-              redirect_to campaign_path(params[:id]), alert: "Đồng bộ thất bại: #{format_errors(errors)}"
-            else
-              render json: { success: false, data: nil, errors: errors }, status: :unprocessable_content
-            end
+            render json: { success: false, data: nil, errors: errors }, status: :unprocessable_content
           end
 
           m.failure(:check_resource) do |error|
@@ -45,26 +37,18 @@ module Api
       def resync
         PlatformCampaigns::ResyncService.call(full_request_params) do |m|
           m.success do |result|
-            if html_browser_request?
-              redirect_to campaign_path(result[:campaign]), notice: "Đã yêu cầu đồng bộ lại chiến dịch."
-            else
-              render json: {
-                success: true,
-                data: {
-                  platform_campaigns: PlatformCampaignBlueprint.render_as_hash(result[:platform_campaigns]),
-                  message: "Campaign resync initiated successfully"
-                },
-                errors: nil
-              }, status: :ok
-            end
+            render json: {
+              success: true,
+              data: {
+                platform_campaigns: PlatformCampaignBlueprint.render_as_hash(result[:platform_campaigns]),
+                message: "Campaign resync initiated successfully"
+              },
+              errors: nil
+            }, status: :ok
           end
 
           m.failure(:validation) do |errors|
-            if html_browser_request?
-              redirect_to dashboard_path, alert: "Đồng bộ lại thất bại: #{format_errors(errors)}"
-            else
-              render json: { success: false, data: nil, errors: errors }, status: :unprocessable_content
-            end
+            render json: { success: false, data: nil, errors: errors }, status: :unprocessable_content
           end
 
           m.failure(:check_resource) do |error|
@@ -72,12 +56,7 @@ module Api
           end
 
           m.failure(:detect_drift) do |error|
-            error_msg = extract_error_message(error)
-            if html_browser_request?
-              redirect_to campaign_path(params[:id]), alert: "Đồng bộ lại thất bại: #{error_msg}"
-            else
-              render json: { success: false, data: nil, errors: error_msg }, status: :unprocessable_content
-            end
+            render json: { success: false, data: nil, errors: extract_error_message(error) }, status: :unprocessable_content
           end
 
           m.failure do |error|
@@ -94,16 +73,7 @@ module Api
 
       def render_publish_check_resource_failure(error)
         status, message = publish_check_resource_status_and_message(error)
-
-        if html_browser_request?
-          if status == :not_found && error.is_a?(Hash) && error[:campaign]
-            render file: Rails.public_path.join("404.html"), status: :not_found, layout: false
-          else
-            redirect_to campaign_path(params[:id]), alert: "Đồng bộ thất bại: #{message}"
-          end
-        else
-          render json: { success: false, data: nil, errors: message }, status: status
-        end
+        render json: { success: false, data: nil, errors: message }, status: status
       end
 
       def publish_check_resource_status_and_message(error)
@@ -124,16 +94,7 @@ module Api
 
       def render_resync_check_resource_failure(error)
         status, message = resync_check_resource_status_and_message(error)
-
-        if html_browser_request?
-          if status == :not_found && error.is_a?(Hash) && error[:campaign]
-            render file: Rails.public_path.join("404.html"), status: :not_found, layout: false
-          else
-            redirect_to campaign_path(params[:id]), alert: "Đồng bộ lại thất bại: #{message}"
-          end
-        else
-          render json: { success: false, data: nil, errors: message }, status: status
-        end
+        render json: { success: false, data: nil, errors: message }, status: status
       end
 
       def resync_check_resource_status_and_message(error)
@@ -146,14 +107,6 @@ module Api
         else
           [ :unprocessable_content, extract_error_message(error) ]
         end
-      end
-
-      def html_browser_request?
-        request.format.html? && params[:format] != "json"
-      end
-
-      def format_errors(errors)
-        errors.is_a?(Hash) ? errors.values.flatten.join(", ") : errors.to_s
       end
 
       def extract_error_message(error)
