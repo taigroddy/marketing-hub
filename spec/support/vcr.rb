@@ -1,5 +1,18 @@
+# frozen_string_literal: true
+
 require 'vcr'
 require 'webmock/rspec'
+
+if ENV['FB_TEST_ACCESS_TOKEN'].blank? && File.exist?(Rails.root.join('.env'))
+  File.foreach(Rails.root.join('.env')) do |line|
+    match = line.match(/\A\s*([A-Za-z_0-9]+)\s*=\s*(.*)\s*\z/)
+    next unless match
+
+    key = match[1]
+    val = match[2].sub(/\A['"](.*)['"]\z/, '\1')
+    ENV[key] ||= val
+  end
+end
 
 VCR.configure do |config|
   config.cassette_library_dir = 'spec/fixtures/vcr_cassettes'

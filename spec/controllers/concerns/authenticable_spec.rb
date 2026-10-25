@@ -25,8 +25,7 @@ RSpec.describe Authenticable, type: :controller do
       get 'protected_action' => 'anonymous#protected_action'
       get 'unprotected_action' => 'anonymous#unprotected_action'
     end
-    allow(controller).to receive(:respond_to?).and_call_original
-    allow(controller).to receive(:respond_to?).with(:login_path).and_return(false)
+    request.headers['Accept'] = 'application/json'
     Current.reset
   end
 
@@ -55,8 +54,7 @@ RSpec.describe Authenticable, type: :controller do
 
       it 'returns nil for invalid/tampered token or input raising ArgumentError' do
         expect(Authenticable.decode_jwt('invalid.jwt.token')).to be_nil
-        allow(JWT).to receive(:decode).and_raise(ArgumentError.new('Invalid argument'))
-        expect(Authenticable.decode_jwt('any.token.here')).to be_nil
+        expect(Authenticable.decode_jwt(12345)).to be_nil
       end
 
       it 'returns nil for expired token' do
@@ -173,44 +171,34 @@ RSpec.describe Authenticable, type: :controller do
     end
 
     context 'when User model exists in database' do
-      let(:mock_user_class) do
-        Class.new do
-          attr_accessor :id, :email
-
-          def initialize(id, email)
-            @id = id
-            @email = email
-          end
-
-          def self.find_by(id:)
-            id == 456 ? new(456, 'found@example.com') : nil
-          end
-        end
-      end
-
-      before do
-        stub_const('User', mock_user_class)
+      let!(:db_user) do
+        User.create!(
+          email: 'found_user@example.com',
+          password: 'Password123!',
+          confirmed_at: Time.current
+        )
       end
 
       it 'resolves Current.user to the ActiveRecord User instance when found' do
-        token = Authenticable.encode_jwt({ user_id: 456 })
+        token = Authenticable.encode_jwt({ user_id: db_user.id })
         request.headers['Authorization'] = "Bearer #{token}"
         get :protected_action
 
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
-        expect(json['message']).to eq('Hello 456')
-        expect(json['email']).to eq('found@example.com')
+        expect(json['message']).to eq("Hello #{db_user.id}")
+        expect(json['email']).to eq('found_user@example.com')
 
         # Also test direct authenticate_user! method to verify Current.user assignment before Rails request reset
         Current.reset
         controller.authenticate_user!
-        expect(Current.user).to be_a(mock_user_class)
-        expect(Current.user.email).to eq('found@example.com')
+        expect(Current.user).to eq(db_user)
+        expect(Current.user.email).to eq('found_user@example.com')
       end
 
       it 'renders unauthorized when user is not found in database' do
-        token = Authenticable.encode_jwt({ user_id: 999 })
+        non_existent_id = User.maximum(:id).to_i + 99_999
+        token = Authenticable.encode_jwt({ user_id: non_existent_id })
         request.headers['Authorization'] = "Bearer #{token}"
         get :protected_action
 
@@ -252,6 +240,7 @@ RSpec.describe Authenticable, type: :controller do
       end
 
       it 'renders unauthorized for HTML format when login_path is not defined' do
+        controller.singleton_class.undef_method(:login_path) if controller.respond_to?(:login_path)
         request.headers['Accept'] = 'text/html'
         get :protected_action
 
@@ -260,16 +249,11 @@ RSpec.describe Authenticable, type: :controller do
       end
 
       context 'when login_path route is defined' do
-        before do
-          allow(controller).to receive(:respond_to?).with(:login_path).and_return(true)
-          controller.define_singleton_method(:login_path) { '/login' }
-        end
-
         it 'redirects to login_path for HTML format' do
           request.headers['Accept'] = 'text/html'
           get :protected_action
 
-          expect(response).to redirect_to('/login')
+          expect(response).to redirect_to(login_path)
           expect(flash[:alert]).to eq('Please sign in to continue.')
         end
       end

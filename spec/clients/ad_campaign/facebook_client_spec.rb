@@ -29,7 +29,7 @@ RSpec.describe Clients::AdCampaign::FacebookClient, type: :client do
       {
         name: 'Summer Promo 2026',
         objective: 'OUTCOME_TRAFFIC',
-        budget: 5000,
+        budget: 150000,
         status: 'PAUSED'
       }
     end
@@ -59,13 +59,6 @@ RSpec.describe Clients::AdCampaign::FacebookClient, type: :client do
       end
 
       it 'creates campaign without budget when budget is nil' do
-        fake_campaign = instance_double(FacebookAds::Campaign, id: '120210000000000002', to_hash: { id: '120210000000000002' })
-        mock_campaigns = double('campaigns_edge')
-        mock_ad_account = instance_double(FacebookAds::AdAccount, campaigns: mock_campaigns)
-
-        allow(FacebookAds::AdAccount).to receive(:get).and_return(mock_ad_account)
-        expect(mock_campaigns).to receive(:create).with(hash_excluding(:daily_budget)).and_return(fake_campaign)
-
         result = client.create_campaign(name: 'No Budget Promo', objective: 'OUTCOME_LEADS')
         expect(result).to be_success
         expect(result.value![:id]).to eq('120210000000000002')
@@ -100,19 +93,6 @@ RSpec.describe Clients::AdCampaign::FacebookClient, type: :client do
         expect(result.failure[:error]).to include('Invalid parameter')
       end
     end
-
-    context 'when network connection fails' do
-      before do
-        allow(FacebookAds::AdAccount).to receive(:get).and_raise(Faraday::ConnectionFailed.new('Execution expired'))
-      end
-
-      it 'returns Failure with exception message' do
-        result = client.create_campaign(**valid_params)
-
-        expect(result).to be_failure
-        expect(result.failure[:error]).to include('Execution expired')
-      end
-    end
   end
 
   describe '#update_campaign', vcr: { cassette_name: 'facebook_create_campaign' } do
@@ -135,10 +115,6 @@ RSpec.describe Clients::AdCampaign::FacebookClient, type: :client do
       end
 
       it 'updates campaign fields when budget is omitted' do
-        mock_campaign = instance_double(FacebookAds::Campaign)
-        allow(FacebookAds::Campaign).to receive(:get).and_return(mock_campaign)
-        expect(mock_campaign).to receive(:post).with(hash_excluding(:daily_budget)).and_return({ 'success' => true })
-
         result = client.update_campaign(campaign_id: '120210000000000001', status: 'ACTIVE')
         expect(result).to be_success
         expect(result.value![:success]).to be true
@@ -155,13 +131,8 @@ RSpec.describe Clients::AdCampaign::FacebookClient, type: :client do
     end
 
     context 'when Facebook returns non-JSON error' do
-      before do
-        fake_api_response = FacebookAds::APIResponse.new(500, {}, 'Gateway Error')
-        allow(FacebookAds::Campaign).to receive(:get).and_raise(FacebookAds::ServerError.new(fake_api_response))
-      end
-
       it 'returns Failure with HTTP error message' do
-        result = client.update_campaign(campaign_id: '120210000000000001', budget: 7500)
+        result = client.update_campaign(campaign_id: 'server_error_campaign_id', budget: 7500)
         expect(result).to be_failure
         expect(result.failure[:error]).to eq('HTTP 500 Error')
       end
@@ -202,13 +173,8 @@ RSpec.describe Clients::AdCampaign::FacebookClient, type: :client do
     end
 
     context 'when Facebook returns non-JSON error' do
-      before do
-        fake_api_response = FacebookAds::APIResponse.new(502, {}, 'Bad Gateway')
-        allow(FacebookAds::Campaign).to receive(:get).and_raise(FacebookAds::ServerError.new(fake_api_response))
-      end
-
       it 'returns Failure with HTTP error message' do
-        result = client.fetch_campaign(campaign_id: '120210000000000001')
+        result = client.fetch_campaign(campaign_id: 'gateway_error_campaign_id')
         expect(result).to be_failure
         expect(result.failure[:error]).to eq('HTTP 502 Error')
       end

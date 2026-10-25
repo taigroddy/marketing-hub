@@ -37,6 +37,7 @@ services:
       FB_APP_SECRET: ${FB_APP_SECRET:-}
       FB_AUTHORIZE_REDIRECT_URI: ${FB_AUTHORIZE_REDIRECT_URI:-${FB_AUTHORIZE_REDIRECT_UI:-http://marketing.localhost/v1/facebook/oauth/callback}}
       FB_AUTHORIZE_REDIRECT_UI: ${FB_AUTHORIZE_REDIRECT_UI:-${FB_AUTHORIZE_REDIRECT_URI:-http://marketing.localhost/v1/facebook/oauth/callback}}
+      FB_TEST_ACCESS_TOKEN: ${FB_TEST_ACCESS_TOKEN:-}
     depends_on:
       db:
         condition: service_healthy

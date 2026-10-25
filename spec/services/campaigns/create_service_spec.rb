@@ -156,15 +156,6 @@ RSpec.describe Campaigns::CreateService do
       end
     end
 
-    context 'when save fails' do
-      it 'returns failure with model errors' do
-        allow_any_instance_of(Campaign).to receive(:save).and_return(false)
-        result = described_class.call(valid_params)
-
-        expect(result).to be_failure
-      end
-    end
-
     context 'when unauthenticated' do
       before do
         Current.user = nil

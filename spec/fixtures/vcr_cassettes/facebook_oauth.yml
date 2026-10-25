@@ -80,4 +80,264 @@ http_interactions:
       encoding: UTF-8
       string: '{"error":{"message":"Error validating access token: Session has expired.","type":"OAuthException","code":190,"fbtrace_id":"Def456Uvw"}}'
   recorded_at: Sat, 24 Oct 2026 12:03:00 GMT
+- request:
+    method: get
+    uri: https://graph.facebook.com/v21.0/oauth/access_token?client_id=<FB_APP_ID>&client_secret=<FB_APP_SECRET>&code=valid_auth_code&redirect_uri=http://marketing.localhost/v1/facebook/oauth/callback
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept:
+      - application/json
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: '{"access_token":"mock_access_token_fb_123456","token_type":"bearer","expires_in":5184000}'
+  recorded_at: Sat, 24 Oct 2026 12:04:00 GMT
+- request:
+    method: get
+    uri: https://graph.facebook.com/v21.0/oauth/access_token?client_id=<FB_APP_ID>&client_secret=<FB_APP_SECRET>&code=invalid_code&redirect_uri=http://marketing.localhost/v1/facebook/oauth/callback
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept:
+      - application/json
+  response:
+    status:
+      code: 400
+      message: Bad Request
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: '{"error":{"message":"Invalid verification code format.","type":"OAuthException","code":100,"fbtrace_id":"Abc123Xyz"}}'
+  recorded_at: Sat, 24 Oct 2026 12:05:00 GMT
+- request:
+    method: get
+    uri: https://graph.facebook.com/v21.0/oauth/access_token?client_id=<FB_APP_ID>&client_secret=<FB_APP_SECRET>&code=server_error_code&redirect_uri=http://marketing.localhost/oauth/facebook/callback
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept:
+      - application/json
+  response:
+    status:
+      code: 500
+      message: Internal Server Error
+    headers:
+      Content-Type:
+      - text/html; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: 'Service Unavailable'
+  recorded_at: Sat, 24 Oct 2026 12:06:00 GMT
+- request:
+    method: get
+    uri: https://graph.facebook.com/v21.0/oauth/access_token?client_id=<FB_APP_ID>&client_secret=<FB_APP_SECRET>&code=empty_ads_code&redirect_uri=http://marketing.localhost/oauth/facebook/callback
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept:
+      - application/json
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: '{"access_token":"empty_ads_token","token_type":"bearer","expires_in":5184000}'
+  recorded_at: Sat, 24 Oct 2026 12:07:00 GMT
+- request:
+    method: get
+    uri: https://graph.facebook.com/v21.0/oauth/access_token?client_id=<FB_APP_ID>&client_secret=<FB_APP_SECRET>&code=empty_ads_code&redirect_uri=http://marketing.localhost/v1/facebook/oauth/callback
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept:
+      - application/json
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: '{"access_token":"empty_ads_token","token_type":"bearer","expires_in":5184000}'
+  recorded_at: Sat, 24 Oct 2026 12:07:00 GMT
+- request:
+    method: get
+    uri: https://graph.facebook.com/v21.0/me?access_token=token123&fields=id,name
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept:
+      - application/json
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: '{"id":"fb_user_1","name":"Test User"}'
+  recorded_at: Sat, 24 Oct 2026 12:08:00 GMT
+- request:
+    method: get
+    uri: https://graph.facebook.com/v21.0/me/adaccounts?access_token=token123&fields=id,name,account_id
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept:
+      - application/json
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: '{"data":[{"id":"act_123","account_id":"123","name":"Ad Account 1"}]}'
+  recorded_at: Sat, 24 Oct 2026 12:09:00 GMT
+- request:
+    method: get
+    uri: https://graph.facebook.com/v21.0/me/adaccounts?access_token=mock_access_token_fb_123456&fields=id,name,account_id
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept:
+      - application/json
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: '{"data":[{"id":"act_1015012345678","account_id":"1015012345678","name":"Acme Corp Ads"}]}'
+  recorded_at: Sat, 24 Oct 2026 12:10:00 GMT
+- request:
+    method: get
+    uri: https://graph.facebook.com/v21.0/me?access_token=mock_access_token_fb_123456&fields=id,name
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept:
+      - application/json
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: '{"id":"1015012345678","name":"Acme Corp Ads"}'
+  recorded_at: Sat, 24 Oct 2026 12:11:00 GMT
+- request:
+    method: get
+    uri: https://graph.facebook.com/v21.0/me/adaccounts?access_token=<FB_TEST_ACCESS_TOKEN>&fields=id,name,account_id
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept:
+      - application/json
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: '{"data":[{"id":"act_1015012345678","account_id":"1015012345678","name":"Acme Corp Ads"}]}'
+  recorded_at: Sat, 24 Oct 2026 12:12:00 GMT
+- request:
+    method: get
+    uri: https://graph.facebook.com/v21.0/me?access_token=<FB_TEST_ACCESS_TOKEN>&fields=id,name
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept:
+      - application/json
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: '{"id":"1015012345678","name":"Acme Corp Ads"}'
+  recorded_at: Sat, 24 Oct 2026 12:13:00 GMT
+- request:
+    method: get
+    uri: https://graph.facebook.com/v21.0/me/adaccounts?access_token=empty_ads_token&fields=id,name,account_id
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept:
+      - application/json
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: '{"data":[]}'
+  recorded_at: Sat, 24 Oct 2026 12:14:00 GMT
+- request:
+    method: get
+    uri: https://graph.facebook.com/v21.0/me?access_token=empty_ads_token&fields=id,name
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept:
+      - application/json
+  response:
+    status:
+      code: 404
+      message: Not Found
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: '{"error":{"message":"Not found","type":"OAuthException","code":100}}'
+  recorded_at: Sat, 24 Oct 2026 12:15:00 GMT
 recorded_with: VCR 6.3.1

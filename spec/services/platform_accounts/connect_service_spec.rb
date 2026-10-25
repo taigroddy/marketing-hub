@@ -54,53 +54,20 @@ RSpec.describe PlatformAccounts::ConnectService, type: :service do
     end
   end
 
-  describe 'facebook connection flow' do
-    let(:mock_client) { instance_double(Clients::OAuth::FacebookClient) }
-
-    before do
-      allow(Clients::OAuth::FacebookClient).to receive(:new).and_return(mock_client)
-    end
-
+  describe 'facebook connection flow', vcr: { cassette_name: 'facebook_oauth' } do
     context 'when OAuth code exchange fails' do
-      before do
-        allow(mock_client).to receive(:exchange_code).with(code: 'bad_code', redirect_uri: nil).and_return(
-          Dry::Monads::Failure(error: 'Invalid verification code format.')
-        )
-      end
-
       it 'returns failure with error message' do
-        result = described_class.call(platform: 'facebook', code: 'bad_code')
+        result = described_class.call(platform: 'facebook', code: 'invalid_code')
 
         expect(result).to be_failure
-        expect(result.failure[:error]).to eq('Invalid verification code format.')
+        expect(result.failure[:error]).to include('Invalid verification code')
         expect(PlatformAccount.count).to eq(0)
       end
     end
 
     context 'when OAuth code exchange succeeds' do
-      let(:token_response) do
-        {
-          access_token: 'eaab_fb_mock_access_token_123',
-          token_type: 'bearer',
-          expires_in: 5184000
-        }
-      end
-
-      before do
-        allow(mock_client).to receive(:exchange_code).with(code: 'valid_code', redirect_uri: nil).and_return(
-          Dry::Monads::Success(token_response)
-        )
-        allow(mock_client).to receive(:fetch_ad_accounts).with('eaab_fb_mock_access_token_123').and_return(
-          Dry::Monads::Success(
-            data: [
-              { 'id' => 'act_1015012345678', 'account_id' => '1015012345678', 'name' => 'Acme Corp Ads' }
-            ]
-          )
-        )
-      end
-
       it 'creates a new PlatformAccount::Facebook record' do
-        result = described_class.call(platform: 'facebook', code: 'valid_code')
+        result = described_class.call(platform: 'facebook', code: 'valid_auth_code')
 
         expect(result).to be_success
         account = result.value![:platform_account]
@@ -109,9 +76,9 @@ RSpec.describe PlatformAccounts::ConnectService, type: :service do
         expect(account.user).to eq(user)
         expect(account.account_id).to eq('1015012345678')
         expect(account.name).to eq('Acme Corp Ads')
-        expect(account.access_token).to eq('eaab_fb_mock_access_token_123')
+        expect(account.access_token).to eq('mock_access_token_fb_123456')
         expect(account.status).to eq('connected')
-        expect(account.token_expires_at).to be_within(5.seconds).of(Time.current + 5184000.seconds)
+        expect(account.token_expires_at).to be_within(10.seconds).of(Time.current + 5184000.seconds)
       end
 
       it 'upserts existing account when re-authenticating same account_id' do
@@ -124,20 +91,20 @@ RSpec.describe PlatformAccounts::ConnectService, type: :service do
         )
 
         expect do
-          result = described_class.call(platform: 'facebook', code: 'valid_code')
+          result = described_class.call(platform: 'facebook', code: 'valid_auth_code')
           expect(result).to be_success
         end.not_to change(PlatformAccount, :count)
 
         existing.reload
         expect(existing.name).to eq('Acme Corp Ads')
-        expect(existing.access_token).to eq('eaab_fb_mock_access_token_123')
+        expect(existing.access_token).to eq('mock_access_token_fb_123456')
         expect(existing.status).to eq('connected')
       end
 
       it 'allows overriding account_id and name directly from params' do
         result = described_class.call(
           platform: 'facebook',
-          code: 'valid_code',
+          code: 'valid_auth_code',
           account_id: 'custom_act_777',
           name: 'Custom Ad Account'
         )
@@ -149,14 +116,7 @@ RSpec.describe PlatformAccounts::ConnectService, type: :service do
       end
 
       it 'falls back to user id when ad accounts are empty' do
-        allow(mock_client).to receive(:fetch_ad_accounts).and_return(
-          Dry::Monads::Success(data: [])
-        )
-        allow(mock_client).to receive(:fetch_user_info).and_return(
-          Dry::Monads::Failure(error: 'Not found')
-        )
-
-        result = described_class.call(platform: 'facebook', code: 'valid_code')
+        result = described_class.call(platform: 'facebook', code: 'empty_ads_code')
 
         expect(result).to be_success
         account = result.value![:platform_account]

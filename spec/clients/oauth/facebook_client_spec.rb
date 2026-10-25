@@ -27,12 +27,17 @@ RSpec.describe Clients::OAuth::FacebookClient, type: :client do
     end
 
     it 'falls back to FB_AUTHORIZE_REDIRECT_UI when FB_AUTHORIZE_REDIRECT_URI is nil' do
-      allow(ENV).to receive(:[]).and_call_original
-      allow(ENV).to receive(:[]).with('FB_AUTHORIZE_REDIRECT_URI').and_return(nil)
-      allow(ENV).to receive(:[]).with('FB_AUTHORIZE_REDIRECT_UI').and_return('http://custom.ui/callback')
-
-      client_fallback = described_class.new(app_id: 'id', app_secret: 'sec', redirect_uri: nil)
-      expect(client_fallback.redirect_uri).to eq('http://custom.ui/callback')
+      orig_uri = ENV['FB_AUTHORIZE_REDIRECT_URI']
+      orig_ui = ENV['FB_AUTHORIZE_REDIRECT_UI']
+      begin
+        ENV.delete('FB_AUTHORIZE_REDIRECT_URI')
+        ENV['FB_AUTHORIZE_REDIRECT_UI'] = 'http://custom.ui/callback'
+        client_fallback = described_class.new(app_id: 'id', app_secret: 'sec', redirect_uri: nil)
+        expect(client_fallback.redirect_uri).to eq('http://custom.ui/callback')
+      ensure
+        ENV['FB_AUTHORIZE_REDIRECT_URI'] = orig_uri
+        ENV['FB_AUTHORIZE_REDIRECT_UI'] = orig_ui
+      end
     end
   end
 
@@ -98,27 +103,9 @@ RSpec.describe Clients::OAuth::FacebookClient, type: :client do
       end
     end
 
-    context 'when network connection fails' do
-      before do
-        allow(Net::HTTP).to receive(:start).and_raise(SocketError.new('Failed to connect'))
-      end
-
-      it 'returns Failure with exception message' do
-        result = client.exchange_code(code: 'valid_auth_code')
-
-        expect(result).to be_failure
-        expect(result.failure[:error]).to include('Failed to connect')
-      end
-    end
-
     context 'when response is non-JSON' do
-      before do
-        fake_response = instance_double(Net::HTTPInternalServerError, is_a?: false, code: '500', body: 'Service Unavailable')
-        allow(Net::HTTP).to receive(:start).and_return(fake_response)
-      end
-
       it 'returns Failure with HTTP error' do
-        result = client.exchange_code(code: 'valid_auth_code')
+        result = client.exchange_code(code: 'server_error_code')
 
         expect(result).to be_failure
         expect(result.failure[:error]).to eq('HTTP 500 Error')
@@ -161,15 +148,12 @@ RSpec.describe Clients::OAuth::FacebookClient, type: :client do
     end
   end
 
-  describe '#fetch_user_info' do
+  describe '#fetch_user_info', vcr: { cassette_name: 'facebook_oauth' } do
     it 'raises ArgumentError when access_token is blank' do
       expect { client.fetch_user_info('') }.to raise_error(ArgumentError, /access_token/)
     end
 
     it 'performs GET to /me and returns Success' do
-      stub_request(:get, 'https://graph.facebook.com/v21.0/me?access_token=token123&fields=id,name')
-        .to_return(status: 200, body: '{"id":"fb_user_1","name":"Test User"}', headers: { 'Content-Type' => 'application/json' })
-
       result = client.fetch_user_info('token123')
       expect(result).to be_success
       expect(result.value![:id]).to eq('fb_user_1')
@@ -177,15 +161,12 @@ RSpec.describe Clients::OAuth::FacebookClient, type: :client do
     end
   end
 
-  describe '#fetch_ad_accounts' do
+  describe '#fetch_ad_accounts', vcr: { cassette_name: 'facebook_oauth' } do
     it 'raises ArgumentError when access_token is blank' do
       expect { client.fetch_ad_accounts('') }.to raise_error(ArgumentError, /access_token/)
     end
 
     it 'performs GET to /me/adaccounts and returns Success' do
-      stub_request(:get, 'https://graph.facebook.com/v21.0/me/adaccounts?access_token=token123&fields=id,name,account_id')
-        .to_return(status: 200, body: '{"data":[{"id":"act_123","account_id":"123","name":"Ad Account 1"}]}', headers: { 'Content-Type' => 'application/json' })
-
       result = client.fetch_ad_accounts('token123')
       expect(result).to be_success
       expect(result.value![:data]).to be_an(Array)

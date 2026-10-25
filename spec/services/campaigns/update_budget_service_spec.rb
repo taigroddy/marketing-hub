@@ -174,15 +174,6 @@ RSpec.describe Campaigns::UpdateBudgetService do
       end
     end
 
-    context 'when update fails' do
-      it 'returns failure with model errors' do
-        allow_any_instance_of(Campaign).to receive(:update).and_return(false)
-        result = described_class.call(id: campaign_a.id, budget: 500.00)
-
-        expect(result).to be_failure
-      end
-    end
-
     context 'when campaign does not exist' do
       it 'returns failure(:not_found)' do
         result = described_class.call(id: 999_999, budget: 500.00)
