@@ -1,0 +1,127 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: https://graph.facebook.com/v21.0/invalid_campaign_id?access_token=<FB_TEST_ACCESS_TOKEN>
+    body:
+      encoding: UTF-8
+      string: daily_budget=-100
+    headers:
+      User-Agent:
+      - fbbizsdk-ruby-v26.0.2
+      Content-Type:
+      - application/x-www-form-urlencoded
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+  response:
+    status:
+      code: 400
+      message: Bad Request
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+      Vary:
+      - Origin
+      Access-Control-Allow-Origin:
+      - "*"
+      Facebook-Api-Version:
+      - v26.0
+      Strict-Transport-Security:
+      - max-age=15552000; preload
+      Pragma:
+      - no-cache
+      Cache-Control:
+      - no-store
+      Expires:
+      - Sat, 01 Jan 2000 00:00:00 GMT
+      Date:
+      - Sat, 25 Oct 2026 12:00:07 GMT
+      Connection:
+      - keep-alive
+    body:
+      encoding: UTF-8
+      string: '{"error":{"message":"Unsupported post request. Object with ID ''invalid_campaign_id'' does not exist, cannot be loaded due to missing permissions, or does not support this operation. Please read the Graph API documentation at https:\/\/developers.facebook.com\/docs\/graph-api","type":"GraphMethodException","code":100,"error_subcode":33,"fbtrace_id":"UpdErr456"}}'
+  recorded_at: Sat, 25 Oct 2026 12:00:07 GMT
+- request:
+    method: post
+    uri: https://graph.facebook.com/v21.0/invalid_campaign_id_99999?access_token=<FB_TEST_ACCESS_TOKEN>
+    body:
+      encoding: UTF-8
+      string: daily_budget=100000.0&name=Summer+Promo+2026
+    headers:
+      User-Agent:
+      - fbbizsdk-ruby-v26.0.2
+      Content-Type:
+      - application/x-www-form-urlencoded
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+  response:
+    status:
+      code: 400
+      message: Bad Request
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+      Vary:
+      - Origin
+      Access-Control-Allow-Origin:
+      - "*"
+      Facebook-Api-Version:
+      - v26.0
+      Strict-Transport-Security:
+      - max-age=15552000; preload
+      Pragma:
+      - no-cache
+      Cache-Control:
+      - no-store
+      Expires:
+      - Sat, 01 Jan 2000 00:00:00 GMT
+      Date:
+      - Sat, 25 Oct 2026 12:00:08 GMT
+      Connection:
+      - keep-alive
+    body:
+      encoding: UTF-8
+      string: '{"error":{"message":"Unsupported post request. Object with ID ''invalid_campaign_id_99999'' does not exist, cannot be loaded due to missing permissions, or does not support this operation. Please read the Graph API documentation at https:\/\/developers.facebook.com\/docs\/graph-api","type":"GraphMethodException","code":100,"error_subcode":33,"fbtrace_id":"AYavwRHxJJhApGcCM4dADcn"}}'
+  recorded_at: Sat, 25 Oct 2026 12:00:08 GMT
+- request:
+    method: post
+    uri: https://graph.facebook.com/v21.0/server_error_campaign_id?access_token=<FB_TEST_ACCESS_TOKEN>
+    body:
+      encoding: UTF-8
+      string: daily_budget=7500
+    headers:
+      User-Agent:
+      - fbbizsdk-ruby-v26.0.2
+      Content-Type:
+      - application/x-www-form-urlencoded
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+  response:
+    status:
+      code: 500
+      message: Internal Server Error
+    headers:
+      Content-Type:
+      - text/plain; charset=UTF-8
+      Vary:
+      - Origin
+      Access-Control-Allow-Origin:
+      - "*"
+      Strict-Transport-Security:
+      - max-age=15552000; preload
+      Date:
+      - Sat, 25 Oct 2026 12:00:09 GMT
+      Connection:
+      - keep-alive
+    body:
+      encoding: UTF-8
+      string: 'Internal Server Error'
+  recorded_at: Sat, 25 Oct 2026 12:00:09 GMT
+recorded_with: VCR 6.4.0

@@ -1,0 +1,79 @@
+---
+http_interactions:
+- request:
+    method: get
+    uri: https://graph.facebook.com/v21.0/non_existent_campaign?access_token=<FB_TEST_ACCESS_TOKEN>&fields=id,name,objective,status,daily_budget,lifetime_budget
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      User-Agent:
+      - fbbizsdk-ruby-v26.0.2
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+  response:
+    status:
+      code: 400
+      message: Bad Request
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+      Vary:
+      - Origin
+      Access-Control-Allow-Origin:
+      - "*"
+      Facebook-Api-Version:
+      - v26.0
+      Strict-Transport-Security:
+      - max-age=15552000; preload
+      Pragma:
+      - no-cache
+      Cache-Control:
+      - no-store
+      Expires:
+      - Sat, 01 Jan 2000 00:00:00 GMT
+      Date:
+      - Sat, 25 Oct 2026 12:00:11 GMT
+      Connection:
+      - keep-alive
+    body:
+      encoding: UTF-8
+      string: '{"error":{"message":"Unsupported get request. Object with ID ''non_existent_campaign'' does not exist, cannot be loaded due to missing permissions, or does not support this operation. Please read the Graph API documentation at https:\/\/developers.facebook.com\/docs\/graph-api","type":"GraphMethodException","code":100,"error_subcode":33,"fbtrace_id":"AQabf-OtJfYMLcTCLYMYgFH"}}'
+  recorded_at: Sat, 25 Oct 2026 12:00:11 GMT
+- request:
+    method: get
+    uri: https://graph.facebook.com/v21.0/gateway_error_campaign_id?access_token=<FB_TEST_ACCESS_TOKEN>&fields=id,name,objective,status,daily_budget,lifetime_budget
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      User-Agent:
+      - fbbizsdk-ruby-v26.0.2
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+  response:
+    status:
+      code: 502
+      message: Bad Gateway
+    headers:
+      Content-Type:
+      - text/plain; charset=UTF-8
+      Vary:
+      - Origin
+      Access-Control-Allow-Origin:
+      - "*"
+      Strict-Transport-Security:
+      - max-age=15552000; preload
+      Date:
+      - Sat, 25 Oct 2026 12:00:12 GMT
+      Connection:
+      - keep-alive
+    body:
+      encoding: UTF-8
+      string: 'Bad Gateway'
+  recorded_at: Sat, 25 Oct 2026 12:00:12 GMT
+recorded_with: VCR 6.4.0

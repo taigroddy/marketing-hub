@@ -1,0 +1,141 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: https://graph.facebook.com/v21.0/act_2183515115230038/campaigns?access_token=<FB_TEST_ACCESS_TOKEN>
+    body:
+      encoding: UTF-8
+      string: daily_budget=100000.0&name=Summer+Promo+2026&objective=OUTCOME_TRAFFIC&special_ad_categories=%5B%22NONE%22%5D&status=PAUSED
+    headers:
+      User-Agent:
+      - fbbizsdk-ruby-v26.0.2
+      Content-Type:
+      - application/x-www-form-urlencoded
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+      Vary:
+      - Origin
+      Access-Control-Allow-Origin:
+      - "*"
+      Facebook-Api-Version:
+      - v26.0
+      Strict-Transport-Security:
+      - max-age=15552000; preload
+      Pragma:
+      - no-cache
+      Cache-Control:
+      - private, no-cache, no-store, must-revalidate
+      Expires:
+      - Sat, 01 Jan 2000 00:00:00 GMT
+      Date:
+      - Sat, 25 Oct 2026 12:00:00 GMT
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '27'
+    body:
+      encoding: UTF-8
+      string: '{"id":"120252481465730228"}'
+  recorded_at: Sat, 25 Oct 2026 12:00:00 GMT
+- request:
+    method: post
+    uri: https://graph.facebook.com/v21.0/act_2183515115230038/campaigns?access_token=<FB_TEST_ACCESS_TOKEN>
+    body:
+      encoding: UTF-8
+      string: daily_budget=150000&name=Summer+Promo+2026&objective=OUTCOME_TRAFFIC&special_ad_categories=%5B%22NONE%22%5D&status=PAUSED
+    headers:
+      User-Agent:
+      - fbbizsdk-ruby-v26.0.2
+      Content-Type:
+      - application/x-www-form-urlencoded
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+      Vary:
+      - Origin
+      Access-Control-Allow-Origin:
+      - "*"
+      Facebook-Api-Version:
+      - v26.0
+      Strict-Transport-Security:
+      - max-age=15552000; preload
+      Pragma:
+      - no-cache
+      Cache-Control:
+      - private, no-cache, no-store, must-revalidate
+      Expires:
+      - Sat, 01 Jan 2000 00:00:00 GMT
+      Date:
+      - Sat, 25 Oct 2026 12:00:01 GMT
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '27'
+    body:
+      encoding: UTF-8
+      string: '{"id":"120252481465730228"}'
+  recorded_at: Sat, 25 Oct 2026 12:00:01 GMT
+- request:
+    method: post
+    uri: https://graph.facebook.com/v21.0/act_2183515115230038/campaigns?access_token=<FB_TEST_ACCESS_TOKEN>
+    body:
+      encoding: UTF-8
+      string: name=No+Budget+Promo&objective=OUTCOME_LEADS&special_ad_categories=%5B%22NONE%22%5D&status=PAUSED
+    headers:
+      User-Agent:
+      - fbbizsdk-ruby-v26.0.2
+      Content-Type:
+      - application/x-www-form-urlencoded
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+      Vary:
+      - Origin
+      Access-Control-Allow-Origin:
+      - "*"
+      Facebook-Api-Version:
+      - v26.0
+      Strict-Transport-Security:
+      - max-age=15552000; preload
+      Pragma:
+      - no-cache
+      Cache-Control:
+      - private, no-cache, no-store, must-revalidate
+      Expires:
+      - Sat, 01 Jan 2000 00:00:00 GMT
+      Date:
+      - Sat, 25 Oct 2026 12:00:02 GMT
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '27'
+    body:
+      encoding: UTF-8
+      string: '{"id":"120252481465730229"}'
+  recorded_at: Sat, 25 Oct 2026 12:00:02 GMT
+recorded_with: VCR 6.4.0

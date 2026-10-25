@@ -1,0 +1,47 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: https://graph.facebook.com/v21.0/act_2183515115230038/campaigns?access_token=<FB_TEST_ACCESS_TOKEN>
+    body:
+      encoding: UTF-8
+      string: daily_budget=-1&name=&objective=INVALID&special_ad_categories=%5B%22NONE%22%5D&status=PAUSED
+    headers:
+      User-Agent:
+      - fbbizsdk-ruby-v26.0.2
+      Content-Type:
+      - application/x-www-form-urlencoded
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+  response:
+    status:
+      code: 400
+      message: Bad Request
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+      Vary:
+      - Origin
+      Access-Control-Allow-Origin:
+      - "*"
+      Facebook-Api-Version:
+      - v26.0
+      Strict-Transport-Security:
+      - max-age=15552000; preload
+      Pragma:
+      - no-cache
+      Cache-Control:
+      - no-store
+      Expires:
+      - Sat, 01 Jan 2000 00:00:00 GMT
+      Date:
+      - Sat, 25 Oct 2026 12:00:03 GMT
+      Connection:
+      - keep-alive
+    body:
+      encoding: UTF-8
+      string: '{"error":{"message":"Invalid parameter: Non-empty string","type":"OAuthException","code":100,"fbtrace_id":"ACuaiE7G3jKL3BlZdX6sAsD"}}'
+  recorded_at: Sat, 25 Oct 2026 12:00:03 GMT
+recorded_with: VCR 6.4.0

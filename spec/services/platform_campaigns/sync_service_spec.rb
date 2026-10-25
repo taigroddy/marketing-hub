@@ -167,8 +167,8 @@ RSpec.describe PlatformCampaigns::SyncService, type: :service do
     end
   end
 
-  describe 'Facebook API sync with real VCR cassette', vcr: { cassette_name: 'facebook_sync_campaign', record: :new_episodes } do
-    context 'when creating a new external campaign (external_campaign_id is blank)' do
+  describe 'Facebook API sync with atomic VCR cassettes' do
+    context 'when creating a new external campaign (external_campaign_id is blank)', vcr: { cassette_name: 'facebook_create_campaign_success' } do
       it 'creates campaign, persists synced status, and broadcasts turbo stream updates' do
         messages_before = ActionCable.server.pubsub.broadcasts("campaign_#{campaign.id}").size
 
@@ -177,7 +177,7 @@ RSpec.describe PlatformCampaigns::SyncService, type: :service do
         expect(result).to be_success
         platform_campaign.reload
         expect(platform_campaign.sync_status).to eq('synced')
-        expect(platform_campaign.external_campaign_id).to be_present
+        expect(platform_campaign.external_campaign_id).to eq('120252481465730228')
         expect(platform_campaign.synced_at).to be_present
         expect(platform_campaign.last_error_message).to be_nil
 
@@ -186,10 +186,10 @@ RSpec.describe PlatformCampaigns::SyncService, type: :service do
       end
     end
 
-    context 'when re-syncing an existing external campaign (external_campaign_id is present)' do
+    context 'when re-syncing an existing external campaign (external_campaign_id is present)', vcr: { cassette_name: 'facebook_update_campaign_success' } do
       before do
         platform_campaign.update_columns(
-          external_campaign_id: '120252471634210228',
+          external_campaign_id: '120252481465730228',
           synced_at: 1.day.ago,
           sync_status: 'pending'
         )
@@ -207,7 +207,7 @@ RSpec.describe PlatformCampaigns::SyncService, type: :service do
       end
     end
 
-    context 'when Facebook API returns an error' do
+    context 'when Facebook API returns an error', vcr: { cassette_name: 'facebook_update_campaign_fail' } do
       before do
         platform_campaign.update_columns(
           external_campaign_id: 'invalid_campaign_id_99999',
@@ -232,7 +232,7 @@ RSpec.describe PlatformCampaigns::SyncService, type: :service do
       end
     end
 
-    context 'block matcher syntax' do
+    context 'block matcher syntax', vcr: { cassette_name: 'facebook_create_campaign_success' } do
       it 'yields to matcher blocks correctly' do
         success_called = false
         described_class.call(platform_campaign_id: platform_campaign.id) do |m|
