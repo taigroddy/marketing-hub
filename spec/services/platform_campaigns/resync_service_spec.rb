@@ -53,9 +53,15 @@ RSpec.describe PlatformCampaigns::ResyncService, type: :service do
 
   describe 'validations' do
     it 'fails validation when campaign id is missing' do
-      result = described_class.call(platform: 'facebook')
+      result = described_class.call(platform: 'facebook', platform_campaign_id: platform_campaign.id)
       expect(result).to be_failure
-      expect(result.failure[:campaign_id]).to be_present
+      expect(result.failure[:id]).to be_present
+    end
+
+    it 'fails validation when platform_campaign_id is missing' do
+      result = described_class.call(id: campaign.id, platform: 'facebook')
+      expect(result).to be_failure
+      expect(result.failure[:platform_campaign_id]).to be_present
     end
 
     it 'matches block matcher m.failure(:validation) when validation fails' do
@@ -79,7 +85,11 @@ RSpec.describe PlatformCampaigns::ResyncService, type: :service do
 
       it 'returns failure indicating no drift detected' do
         expect do
-          result = described_class.call(id: campaign.id, platform: 'facebook')
+          result = described_class.call(
+            id: campaign.id,
+            platform: 'facebook',
+            platform_campaign_id: platform_campaign.id
+          )
           expect(result).to be_failure
           expect(result.failure[:error]).to include('No drift detected')
         end.not_to have_enqueued_job(SyncCampaignJob)
@@ -87,7 +97,12 @@ RSpec.describe PlatformCampaigns::ResyncService, type: :service do
 
       it 'allows force resync when force: true' do
         expect do
-          result = described_class.call(id: campaign.id, platform: 'facebook', force: true)
+          result = described_class.call(
+            id: campaign.id,
+            platform: 'facebook',
+            platform_campaign_id: platform_campaign.id,
+            force: true
+          )
           expect(result).to be_success
         end.to have_enqueued_job(SyncCampaignJob).with(platform_campaign.id)
       end
@@ -101,7 +116,11 @@ RSpec.describe PlatformCampaigns::ResyncService, type: :service do
 
       it 'detects drift, updates status to pending via mark_pending, and enqueues SyncCampaignJob via enqueue_sync_job' do
         expect do
-          result = described_class.call(id: campaign.id, platform: 'facebook')
+          result = described_class.call(
+            id: campaign.id,
+            platform: 'facebook',
+            platform_campaign_id: platform_campaign.id
+          )
           expect(result).to be_success
           expect(result.value![:platform_campaigns].first.id).to eq(platform_campaign.id)
         end.to have_enqueued_job(SyncCampaignJob).with(platform_campaign.id)
@@ -176,7 +195,11 @@ RSpec.describe PlatformCampaigns::ResyncService, type: :service do
         status: 'draft'
       )
 
-      result = described_class.call(id: other_camp.id, platform: 'facebook')
+      result = described_class.call(
+        id: other_camp.id,
+        platform: 'facebook',
+        platform_campaign_id: platform_campaign.id
+      )
       expect(result).to be_failure
       expect(result.failure[:campaign]).to include('not found')
     end
@@ -184,7 +207,11 @@ RSpec.describe PlatformCampaigns::ResyncService, type: :service do
     it 'fails when no platform campaign exists for this campaign' do
       platform_campaign.destroy!
 
-      result = described_class.call(id: campaign.id, platform: 'facebook')
+      result = described_class.call(
+        id: campaign.id,
+        platform: 'facebook',
+        platform_campaign_id: 999_999
+      )
       expect(result).to be_failure
       expect(result.failure[:platform_campaigns]).to include('not found')
     end

@@ -7,7 +7,7 @@ RSpec.describe PlatformCampaigns::PublishContract do
 
   let(:valid_params) do
     {
-      campaign_id: 1,
+      id: 1,
       platform: 'facebook',
       platform_account_ids: [ 10, 20 ]
     }
@@ -18,9 +18,10 @@ RSpec.describe PlatformCampaigns::PublishContract do
     expect(result).to be_success
   end
 
-  it 'passes with id instead of campaign_id' do
-    result = contract.call(valid_params.except(:campaign_id).merge(id: 1))
-    expect(result).to be_success
+  it 'fails when id is missing' do
+    result = contract.call(valid_params.except(:id))
+    expect(result).to be_failure
+    expect(result.errors[:id]).to include('is missing')
   end
 
   it 'fails when platform is invalid' do
@@ -33,11 +34,5 @@ RSpec.describe PlatformCampaigns::PublishContract do
     result = contract.call(valid_params.merge(platform_account_ids: []))
     expect(result).to be_failure
     expect(result.errors[:platform_account_ids]).to be_present
-  end
-
-  it 'fails when both id and campaign_id are missing' do
-    result = contract.call(valid_params.except(:campaign_id))
-    expect(result).to be_failure
-    expect(result.errors[:campaign_id]).to include('must be filled')
   end
 end

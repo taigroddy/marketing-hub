@@ -3,7 +3,7 @@
 module Campaigns
   class UpdateContract < ApplicationContract
     params do
-      optional(:id).filled
+      required(:id).filled(:integer)
       required(:budget).filled(:decimal, gt?: 0)
     end
   end

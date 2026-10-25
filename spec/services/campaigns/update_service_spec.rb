@@ -108,6 +108,13 @@ RSpec.describe Campaigns::UpdateService do
         expect(result.failure).to have_key(:budget)
       end
 
+      it 'fails validation when id is missing' do
+        result = described_class.call(budget: 500)
+
+        expect(result).to be_failure
+        expect(result.failure).to have_key(:id)
+      end
+
       it 'matches failure(:validation) block' do
         matched_validation = false
 

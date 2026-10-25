@@ -55,7 +55,7 @@ RSpec.describe PlatformCampaigns::PublishService, type: :service do
     it 'fails validation when campaign id is missing' do
       result = described_class.call(platform: 'facebook', platform_account_ids: [ account_fb1.id ])
       expect(result).to be_failure
-      expect(result.failure[:campaign_id]).to be_present
+      expect(result.failure[:id]).to be_present
     end
 
     it 'fails validation when platform_account_ids is empty' do

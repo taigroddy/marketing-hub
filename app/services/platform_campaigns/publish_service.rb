@@ -19,8 +19,7 @@ module PlatformCampaigns
     end
 
     def check_resource(input)
-      campaign_id = input[:campaign_id] || input[:id]
-      campaign = Campaign.find_by(id: campaign_id)
+      campaign = Campaign.find_by(id: input[:id])
       return Failure(campaign: [ "not found" ]) if campaign.nil?
 
       return Failure(error: "Google platform integration coming soon") if input[:platform] == "google"

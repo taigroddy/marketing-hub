@@ -10,18 +10,19 @@ RSpec.describe Campaigns::UpdateContract do
     expect(result).to be_success
   end
 
-  it 'passes with valid budget without id' do
+  it 'fails when id is missing' do
     result = contract.call(budget: 500.0)
-    expect(result).to be_success
+    expect(result).to be_failure
+    expect(result.errors[:id]).to include('is missing')
   end
 
   it 'fails when budget is missing or blank' do
-    expect(contract.call({}).errors[:budget]).to be_present
-    expect(contract.call(budget: '').errors[:budget]).to be_present
+    expect(contract.call(id: 1).errors[:budget]).to be_present
+    expect(contract.call(id: 1, budget: '').errors[:budget]).to be_present
   end
 
   it 'fails when budget is zero or negative' do
-    expect(contract.call(budget: 0).errors[:budget]).to be_present
-    expect(contract.call(budget: -50).errors[:budget]).to be_present
+    expect(contract.call(id: 1, budget: 0).errors[:budget]).to be_present
+    expect(contract.call(id: 1, budget: -50).errors[:budget]).to be_present
   end
 end

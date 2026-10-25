@@ -20,16 +20,12 @@ module PlatformCampaigns
     end
 
     def check_resource(input)
-      campaign_id = input[:campaign_id] || input[:id]
-      campaign = Campaign.find_by(id: campaign_id)
+      campaign = Campaign.find_by(id: input[:id])
       return Failure(campaign: [ "not found" ]) if campaign.nil?
 
       records = campaign.platform_campaigns.joins(:platform_account)
                         .where(platform_accounts: { type: "PlatformAccount::#{input[:platform].camelize}" })
-
-      if input[:platform_campaign_id].present?
-        records = records.where(id: input[:platform_campaign_id])
-      end
+                        .where(id: input[:platform_campaign_id])
 
       return Failure(platform_campaigns: [ "not found" ]) if records.empty?
 
