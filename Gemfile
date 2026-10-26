@@ -34,7 +34,7 @@ gem "facebookbusiness", "~> 26.0"
 
 # Background jobs and caching
 gem "sidekiq", "~> 8.1"
-gem "redis", ">= 4.0", "< 6.0"
+gem "redis", ">= 4.0", "< 7.0"
 
 # API documentation
 gem "rswag", "~> 2.17"
