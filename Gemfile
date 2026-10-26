@@ -82,4 +82,5 @@ end
 group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
+  gem "annotate", github: "andynu/annotate_models", branch: "rails-8-0"
 end

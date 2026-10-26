@@ -1,5 +1,27 @@
 # frozen_string_literal: true
 
+# == Schema Information
+#
+# Table name: user_tokens
+#
+#  id           :bigint           not null, primary key
+#  device_info  :string
+#  expires_at   :datetime         not null
+#  revoked_at   :datetime
+#  token_digest :string           not null
+#  created_at   :datetime         not null
+#  updated_at   :datetime         not null
+#  user_id      :bigint           not null
+#
+# Indexes
+#
+#  index_user_tokens_on_token_digest  (token_digest) UNIQUE
+#  index_user_tokens_on_user_id       (user_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (user_id => users.id)
+#
 require "digest"
 require "securerandom"
 

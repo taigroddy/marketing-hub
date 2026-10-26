@@ -1,5 +1,23 @@
 # frozen_string_literal: true
 
+# == Schema Information
+#
+# Table name: users
+#
+#  id                   :bigint           not null, primary key
+#  confirmation_sent_at :datetime
+#  confirmation_token   :string
+#  confirmed_at         :datetime
+#  email                :string           not null
+#  password_digest      :string           not null
+#  created_at           :datetime         not null
+#  updated_at           :datetime         not null
+#
+# Indexes
+#
+#  index_users_on_confirmation_token  (confirmation_token) UNIQUE
+#  index_users_on_email               (email) UNIQUE
+#
 class User < ApplicationRecord
   has_secure_password validations: false
 
