@@ -516,44 +516,44 @@ PLATFORMS
 DEPENDENCIES
   annotate!
   bcrypt (~> 3.1.7)
-  blueprinter
-  bootsnap
-  brakeman
-  byebug (>= 11.1.3)
-  dry-monads
-  dry-transaction
-  dry-validation
-  facebookbusiness (>= 26.0)
-  fasterer
-  importmap-rails
-  jbuilder
+  blueprinter (~> 1.3)
+  bootsnap (~> 1.26)
+  brakeman (~> 8.1)
+  byebug (~> 13.0)
+  dry-monads (~> 1.11)
+  dry-transaction (~> 0.16.0)
+  dry-validation (~> 1.11)
+  facebookbusiness (~> 26.0)
+  fasterer (~> 0.11.0)
+  importmap-rails (~> 2.2)
+  jbuilder (~> 2.15)
   json (< 3.0)
-  jwt
-  kamal
+  jwt (~> 3.3)
+  kamal (~> 2.12)
   pg (~> 1.1)
-  propshaft
-  puma (>= 5.0)
+  propshaft (~> 1.3)
+  puma (~> 8.0)
   rails (~> 8.0.5, >= 8.0.5.1)
   redis (>= 4.0, < 6.0)
-  rspec-rails
-  rswag
-  rswag-specs
-  rubocop
-  rubocop-rails
-  rubocop-rails-omakase
-  sidekiq
-  simplecov
-  solid_cable
-  solid_cache
-  solid_queue
-  stimulus-rails
-  tailwindcss-rails
-  thruster
-  turbo-rails
-  tzinfo-data
-  vcr
-  web-console
-  webmock
+  rspec-rails (~> 8.0)
+  rswag (~> 2.17)
+  rswag-specs (~> 2.17)
+  rubocop (~> 1.92)
+  rubocop-rails (~> 2.38)
+  rubocop-rails-omakase (~> 1.1)
+  sidekiq (~> 8.1)
+  simplecov (~> 1.3)
+  solid_cable (~> 4.1)
+  solid_cache (~> 1.0)
+  solid_queue (~> 1.7)
+  stimulus-rails (~> 1.3)
+  tailwindcss-rails (~> 4.6)
+  thruster (~> 0.1.27)
+  turbo-rails (~> 2.0)
+  tzinfo-data (~> 1.0)
+  vcr (~> 6.4)
+  web-console (~> 4.3)
+  webmock (~> 3.34)
 
 CHECKSUMS
   actioncable (8.0.5.1) sha256=5adb700c605a7ef7628f87dc7a6da20cd5f0ceac782a59055c864ea51a77d7c7
