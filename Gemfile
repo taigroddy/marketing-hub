@@ -66,7 +66,7 @@ group :development, :test do
   gem "brakeman", "~> 8.1", require: false
 
   # Testing framework & tooling
-  gem "rspec-rails", "~> 8.0"
+  gem "rspec-rails", "~> 8.1"
   gem "rswag-specs", "~> 2.17"
   gem "vcr", "~> 6.4"
   gem "webmock", "~> 3.34"
